@@ -44,12 +44,7 @@ npm test
 npm run build
 ```
 
-Testele API-ului folosesc o bază de date separată, dată de `TEST_DATABASE_URL` (implicit `deadlinehero_test`), cu migrările aplicate:
-
-```bash
-cd apps/api
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/deadlinehero_test npx prisma migrate deploy
-```
+Testele API-ului rulează pe o bază de date separată, `deadlinehero_test` (sau cea din `TEST_DATABASE_URL`). `npm test` o creează și îi aplică migrările automat, deci e nevoie doar ca PostgreSQL să fie pornit (`docker compose up -d db`).
 
 CI-ul (GitHub Actions) rulează lint, verificarea tipurilor, testele, build-ul și `npm audit` la fiecare push pe `main` și la fiecare pull request.
 
