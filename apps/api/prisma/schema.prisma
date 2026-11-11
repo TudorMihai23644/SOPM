@@ -1,0 +1,140 @@
+// Schema bazei de date DeadlineHero, versiunea 1.
+// Toate momentele de timp se stochează în UTC.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum TaskStatus {
+  UPCOMING
+  COMPLETED
+  CANCELLED
+  OVERDUE
+}
+
+enum LedgerKind {
+  XP
+  COINS
+  HP
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  nickname     String   @unique
+  timezone     String   @default("Europe/Bucharest")
+  xpTotal      Int      @default(0) @map("xp_total")
+  level        Int      @default(1)
+  hp           Int      @default(100)
+  coins        Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tasks         Task[]
+  history       HistoryLog[]
+  ledger        RewardLedger[]
+  stamina       DailyStamina[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model Task {
+  id               String     @id @default(uuid()) @db.Uuid
+  ownerId          String     @map("owner_id") @db.Uuid
+  title            String     @db.VarChar(120)
+  description      String?
+  deadlineAt       DateTime   @map("deadline_at")
+  difficulty       Difficulty
+  status           TaskStatus @default(UPCOMING)
+  createdAt        DateTime   @default(now()) @map("created_at")
+  completedAt      DateTime?  @map("completed_at")
+  overdueAt        DateTime?  @map("overdue_at")
+  postponeCount    Int        @default(0) @map("postpone_count")
+  hpPenaltyApplied Boolean    @default(false) @map("hp_penalty_applied")
+
+  owner   User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  history HistoryLog[]
+
+  @@index([ownerId, status, deadlineAt])
+  @@map("tasks")
+}
+
+model HistoryLog {
+  id         String      @id @default(uuid()) @db.Uuid
+  userId     String      @map("user_id") @db.Uuid
+  taskId     String?     @map("task_id") @db.Uuid
+  taskTitle  String      @map("task_title") @db.VarChar(120)
+  event      String
+  fromStatus TaskStatus? @map("from_status")
+  toStatus   TaskStatus? @map("to_status")
+  at         DateTime    @default(now())
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@index([userId, at])
+  @@map("history_log")
+}
+
+/// Jurnal append-only al oricărei modificări de XP, monede sau HP.
+model RewardLedger {
+  id        String     @id @default(uuid()) @db.Uuid
+  userId    String     @map("user_id") @db.Uuid
+  kind      LedgerKind
+  delta     Int
+  reason    String
+  refType   String     @map("ref_type")
+  refId     String     @map("ref_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // O recompensă de un anumit fel nu se acordă de două ori pentru același motiv și aceeași referință.
+  @@unique([userId, kind, reason, refType, refId])
+  @@map("reward_ledger")
+}
+
+model DailyStamina {
+  userId    String   @map("user_id") @db.Uuid
+  gameDay   DateTime @map("game_day") @db.Date
+  xpAwarded Int      @default(0) @map("xp_awarded")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, gameDay])
+  @@map("daily_stamina")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model AppConfig {
+  key   String @id
+  value Json
+
+  @@map("app_config")
+}
