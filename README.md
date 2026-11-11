@@ -17,7 +17,7 @@ Cerințe: Node.js 20 sau mai nou și Docker (sau un PostgreSQL 16 local).
 ```bash
 npm install
 docker compose up -d db
-cp .env.example apps/api/.env
+cp .env.example apps/api/.env      # pe Windows (cmd): copy .env.example apps\api\.env
 npm run build -w @deadlinehero/shared
 npm run db:migrate
 npm run db:seed
