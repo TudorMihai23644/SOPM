@@ -1,4 +1,16 @@
-import type { ApiError, AuthResponse, LoginInput, MeDto, RegisterInput } from '@deadlinehero/shared';
+import type {
+  ApiError,
+  AuthResponse,
+  CreateTaskInput,
+  HistoryEntryDto,
+  LoginInput,
+  MeDto,
+  Page,
+  RegisterInput,
+  TaskDto,
+  TaskStatus,
+  UpdateTaskInput,
+} from '@deadlinehero/shared';
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? '/api/v1';
 
@@ -87,4 +99,21 @@ export const api = {
   },
   refresh: refreshSession,
   me: () => authed<MeDto>('/me'),
+
+  tasks: {
+    list: (params: { status: TaskStatus[]; sort: 'deadline' | 'recent'; limit?: number }) => {
+      const query = new URLSearchParams({ status: params.status.join(','), sort: params.sort, limit: String(params.limit ?? 100) });
+      return authed<Page<TaskDto>>(`/tasks?${query}`);
+    },
+    create: (input: CreateTaskInput) => authed<TaskDto>('/tasks', { method: 'POST', body: JSON.stringify(input) }),
+    update: (id: string, input: UpdateTaskInput) =>
+      authed<TaskDto>(`/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
+    complete: (id: string) => authed<TaskDto>(`/tasks/${id}/complete`, { method: 'POST' }),
+    cancel: (id: string) => authed<TaskDto>(`/tasks/${id}/cancel`, { method: 'POST' }),
+    undo: (id: string) => authed<TaskDto>(`/tasks/${id}/undo`, { method: 'POST' }),
+    remove: (id: string) => authed<void>(`/tasks/${id}`, { method: 'DELETE' }),
+  },
+
+  history: (cursor?: string) =>
+    authed<Page<HistoryEntryDto>>(`/history?limit=50${cursor ? `&cursor=${cursor}` : ''}`),
 };

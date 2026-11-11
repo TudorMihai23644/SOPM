@@ -58,5 +58,16 @@ CI-ul (GitHub Actions) rulează lint, verificarea tipurilor, testele, build-ul �
 | `POST /api/v1/auth/logout` | Închide sesiunea |
 | `GET /api/v1/me` | Profilul și starea jocului (nivel, XP, HP, monede) |
 | `GET /api/v1/health` | Verificare pentru hosting |
+| `GET /api/v1/tasks` | Lista activităților (filtru `status`, `sort=deadline|recent`, paginare cu `cursor`) |
+| `POST /api/v1/tasks` | Creează o activitate (maximum 30 pe zi de joc și 100 active) |
+| `GET /api/v1/tasks/{id}` | O activitate |
+| `PATCH /api/v1/tasks/{id}` | Editează titlul și descrierea sau mută termenul (maximum 2 amânări) |
+| `POST /api/v1/tasks/{id}/complete` | Marchează activitatea Completă |
+| `POST /api/v1/tasks/{id}/cancel` | Anulează activitatea |
+| `POST /api/v1/tasks/{id}/undo` | Anulează finalizarea, în cel mult 10 secunde, o singură dată |
+| `DELETE /api/v1/tasks/{id}` | Șterge definitiv activitatea; titlul rămâne în istoric |
+| `GET /api/v1/history` | Istoricul schimbărilor de stare |
+
+Activitățile al căror termen a trecut devin Restant prin job-ul `overdue-scan`, care rulează la fiecare minut, și la fiecare citire a listei.
 
 Tokenul de acces (JWT, 15 minute) stă doar în memoria aplicației web. Refresh token-ul e într-un cookie HttpOnly, se rotește la fiecare folosire și se păstrează în baza de date doar ca hash.

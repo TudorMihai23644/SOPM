@@ -15,6 +15,7 @@ export interface GameConfig {
   difficulty: Record<Difficulty, DifficultyValues>;
   staminaDailyXp: number;
   minCompletionSeconds: number;
+  minDeadlineLeadSeconds: number;
   maxTasksCreatedPerDay: number;
   maxActiveTasks: number;
   maxPostpones: number;
@@ -40,6 +41,7 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
   },
   staminaDailyXp: 150,
   minCompletionSeconds: 60,
+  minDeadlineLeadSeconds: 60,
   maxTasksCreatedPerDay: 30,
   maxActiveTasks: 100,
   maxPostpones: 2,

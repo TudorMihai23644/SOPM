@@ -18,6 +18,7 @@ export function validate<T>(schema: ZodType<T>, values: unknown): { data?: T; er
 const FIELD_BY_CODE: Record<string, string> = {
   EMAIL_TAKEN: 'email',
   NICKNAME_TAKEN: 'nickname',
+  POSTPONE_LIMIT_REACHED: 'deadlineAt',
 };
 
 /** Pune eroarea venită de la server lângă câmpul afectat, sau deasupra formularului. */

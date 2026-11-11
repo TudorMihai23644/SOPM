@@ -52,28 +52,36 @@ model User {
 }
 
 model Task {
-  id               String     @id @default(uuid()) @db.Uuid
-  ownerId          String     @map("owner_id") @db.Uuid
-  title            String     @db.VarChar(120)
+  id               String      @id @default(uuid()) @db.Uuid
+  ownerId          String      @map("owner_id") @db.Uuid
+  title            String      @db.VarChar(120)
   description      String?
-  deadlineAt       DateTime   @map("deadline_at")
+  deadlineAt       DateTime    @map("deadline_at")
   difficulty       Difficulty
-  status           TaskStatus @default(UPCOMING)
-  createdAt        DateTime   @default(now()) @map("created_at")
-  completedAt      DateTime?  @map("completed_at")
-  overdueAt        DateTime?  @map("overdue_at")
-  postponeCount    Int        @default(0) @map("postpone_count")
-  hpPenaltyApplied Boolean    @default(false) @map("hp_penalty_applied")
+  status           TaskStatus  @default(UPCOMING)
+  createdAt        DateTime    @default(now()) @map("created_at")
+  completedAt      DateTime?   @map("completed_at")
+  overdueAt        DateTime?   @map("overdue_at")
+  updatedAt        DateTime    @default(now()) @updatedAt @map("updated_at")
+  postponeCount    Int         @default(0) @map("postpone_count")
+  hpPenaltyApplied Boolean     @default(false) @map("hp_penalty_applied")
+  /// Starea dinaintea finalizării, la care revine Undo.
+  completedFrom    TaskStatus? @map("completed_from")
+  /// Undo se poate folosi o singură dată per activitate.
+  undoUsed         Boolean     @default(false) @map("undo_used")
 
   owner   User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   history HistoryLog[]
 
   @@index([ownerId, status, deadlineAt])
+  @@index([status, deadlineAt])
   @@map("tasks")
 }
 
 model HistoryLog {
   id         String      @id @default(uuid()) @db.Uuid
+  /// Ordinea scrierii, pentru evenimentele cu același moment.
+  seq        BigInt      @default(autoincrement())
   userId     String      @map("user_id") @db.Uuid
   taskId     String?     @map("task_id") @db.Uuid
   taskTitle  String      @map("task_title") @db.VarChar(120)
@@ -85,7 +93,8 @@ model HistoryLog {
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
-  @@index([userId, at])
+  @@index([userId, at, seq])
+  @@index([userId, event, at])
   @@map("history_log")
 }
 

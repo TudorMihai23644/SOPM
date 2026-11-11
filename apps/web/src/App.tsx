@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './lib/auth';
+import { HistoryPage } from './pages/HistoryPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
@@ -20,17 +21,18 @@ function GuestOnly({ children }: { children: ReactNode }) {
   return children;
 }
 
-function Home() {
+function Protected({ page: Page }: { page: typeof HomePage }) {
   const { state } = useAuth();
   if (state.status === 'loading') return <Loading />;
   if (state.status === 'anonymous') return <Navigate to="/autentificare" replace />;
-  return <HomePage initialUser={state.user} />;
+  return <Page initialUser={state.user} />;
 }
 
 export function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/" element={<Protected page={HomePage} />} />
+      <Route path="/istoric" element={<Protected page={HistoryPage} />} />
       <Route path="/autentificare" element={<GuestOnly><LoginPage /></GuestOnly>} />
       <Route path="/inregistrare" element={<GuestOnly><RegisterPage /></GuestOnly>} />
       <Route path="*" element={<Navigate to="/" replace />} />
