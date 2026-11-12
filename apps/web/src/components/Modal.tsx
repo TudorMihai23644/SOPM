@@ -24,19 +24,19 @@ export function Modal({ open, title, onClose, children }: ModalProps) {
       aria-labelledby="modal-title"
       onClose={onClose}
       onClick={(event) => event.target === ref.current && onClose()}
-      className="panel m-auto w-[calc(100%-2rem)] max-w-lg border-cyan p-0 text-ink shadow-[0_0_30px_color-mix(in_srgb,var(--color-cyan)_30%,transparent)] backdrop:bg-void/80 backdrop:backdrop-blur-sm"
+      className="panel panel-ornate m-auto w-[calc(100%-2rem)] max-w-lg overflow-visible p-0 text-ink backdrop:bg-black/75"
     >
       {open && (
         <div className="p-6">
           <div className="mb-5 flex items-start justify-between gap-4">
-            <h2 id="modal-title" className="pixel glow-cyan pt-2 text-sm text-cyan">
+            <h2 id="modal-title" className="glow-gold font-display text-xl font-bold text-gold">
               {title}
             </h2>
             <button
               type="button"
               onClick={onClose}
               aria-label="Închide"
-              className="-m-2 inline-flex h-11 w-11 items-center justify-center rounded-md text-muted hover:bg-panel-2 hover:text-ink"
+              className="-m-2 inline-flex h-11 w-11 items-center justify-center rounded-[3px] text-muted hover:text-gold"
             >
               ✕
             </button>

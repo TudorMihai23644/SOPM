@@ -31,10 +31,10 @@ export function LoginPage() {
   }
 
   return (
-    <AuthLayout title="CONTINUĂ JOCUL" subtitle="Intră în cont ca să-ți continui misiunile.">
+    <AuthLayout title="Întoarcerea eroului" subtitle="Intră în cont ca să-ți continui misiunile.">
       <form className="space-y-4" onSubmit={onSubmit} noValidate>
         {errors.form && (
-          <p role="alert" className="rounded-md border-2 border-danger bg-danger/10 px-3 py-2 text-sm text-danger">
+          <p role="alert" className="rounded-[3px] border-2 border-blood bg-blood/10 px-3 py-2 text-sm text-blood">
             {errors.form}
           </p>
         )}
@@ -55,12 +55,12 @@ export function LoginPage() {
           onChange={(e) => setValues({ ...values, password: e.target.value })}
         />
         <Button type="submit" className="w-full" loading={submitting}>
-          Start
+          Intră în joc
         </Button>
       </form>
       <p className="mt-6 text-center text-sm text-muted">
         Nu ai cont?{' '}
-        <Link to="/inregistrare" className="font-bold text-cyan uppercase hover:underline">
+        <Link to="/inregistrare" className="font-bold text-gold hover:underline">
           Creează unul
         </Link>
       </p>

@@ -23,7 +23,7 @@ interface TaskFormProps {
 const DIFFICULTY_HINTS: Record<Difficulty, string> = Object.fromEntries(
   DIFFICULTIES.map((d) => {
     const v = DEFAULT_GAME_CONFIG.difficulty[d];
-    return [d, `+${v.xp} XP · ◇${v.coins} · −${v.hpLoss} HP dacă ratezi`];
+    return [d, `+${v.xp} XP · ◈ ${v.coins} aur · −${v.hpLoss} viață dacă o ratezi`];
   }),
 ) as Record<Difficulty, string>;
 
@@ -86,7 +86,7 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
   return (
     <form className="space-y-4" onSubmit={handleSubmit} noValidate>
       {errors.form && (
-        <p role="alert" className="rounded-md border-2 border-danger bg-danger/10 px-3 py-2 text-sm text-danger">
+        <p role="alert" className="rounded-[3px] border-2 border-blood bg-blood/10 px-3 py-2 text-sm text-blood">
           {errors.form}
         </p>
       )}
@@ -113,14 +113,14 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
         </p>
       ) : (
         <fieldset>
-          <legend className="mb-1.5 text-sm font-semibold tracking-wide text-muted uppercase">Dificultate</legend>
+          <legend className="mb-1.5 font-display text-xs font-bold tracking-wider text-muted uppercase">Dificultate</legend>
           <div className="grid gap-2 sm:grid-cols-3">
             {DIFFICULTIES.map((difficulty) => (
               <label
                 key={difficulty}
-                className={`flex min-h-11 cursor-pointer flex-col rounded-md border-2 px-3 py-2 text-sm transition ${
+                className={`flex min-h-11 cursor-pointer flex-col rounded-[3px] border-2 px-3 py-2 text-sm transition ${
                   values.difficulty === difficulty
-                    ? 'border-pink bg-pink/10 shadow-[0_0_10px_color-mix(in_srgb,var(--color-pink)_40%,transparent)]'
+                    ? 'border-gold bg-gold/10 shadow-[0_0_10px_rgb(217_171_74/0.3)]'
                     : 'border-line hover:border-muted'
                 }`}
               >
@@ -131,20 +131,20 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
                     value={difficulty}
                     checked={values.difficulty === difficulty}
                     onChange={() => setValues({ ...values, difficulty })}
-                    className="accent-pink"
+                    className="accent-[#d9ab4a]"
                   />
-                  {difficulty === 'HARD' ? '☠ Boss' : DIFFICULTY_LABELS[difficulty]}
+                  {difficulty === 'HARD' ? '♛ Boss' : DIFFICULTY_LABELS[difficulty]}
                 </span>
                 <span className="mt-1 text-xs text-muted">{DIFFICULTY_HINTS[difficulty]}</span>
               </label>
             ))}
           </div>
-          {errors.difficulty && <p className="mt-1 text-sm text-danger">✖ {errors.difficulty}</p>}
+          {errors.difficulty && <p className="mt-1 text-sm text-blood">✖ {errors.difficulty}</p>}
         </fieldset>
       )}
 
       <div className="space-y-1.5">
-        <label htmlFor={descriptionId} className="block text-sm font-semibold tracking-wide text-muted uppercase">
+        <label htmlFor={descriptionId} className="block font-display text-xs font-bold tracking-wider text-muted uppercase">
           Descriere <span className="font-normal normal-case">(opțional)</span>
         </label>
         <textarea
@@ -153,9 +153,9 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
           maxLength={2000}
           value={values.description}
           onChange={(e) => setValues({ ...values, description: e.target.value })}
-          className="block w-full rounded-md border-2 border-line bg-void/70 px-3 py-2 text-base text-ink outline-none focus:border-cyan"
+          className="block w-full rounded-[3px] border-2 border-line bg-abyss/70 px-3 py-2 text-base text-ink outline-none focus:border-gold"
         />
-        {errors.description && <p className="text-sm text-danger">✖ {errors.description}</p>}
+        {errors.description && <p className="text-sm text-blood">✖ {errors.description}</p>}
       </div>
 
       <div className="flex justify-end gap-2 pt-2">

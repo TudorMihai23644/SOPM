@@ -45,10 +45,10 @@ function loadSettings(): Settings {
 
 const TONES: Record<Tone, string> = {
   xp: 'text-gold glow-gold',
-  coin: 'text-cyan glow-cyan',
-  hp: 'text-lime glow-lime',
-  damage: 'text-danger glow-danger',
-  combo: 'text-pink glow-pink',
+  coin: 'text-gold glow-gold',
+  hp: 'text-heal glow-heal',
+  damage: 'text-blood glow-blood',
+  combo: 'text-ember glow-ember',
   info: 'text-ink',
 };
 
@@ -107,11 +107,11 @@ export function FxProvider({ children }: { children: ReactNode }) {
     <FxContext.Provider value={value}>
       {children}
       {/* Anunțurile apar și pentru cititoarele de ecran. */}
-      <div aria-live="polite" className="pointer-events-none fixed inset-x-0 top-24 z-40 flex flex-col items-center gap-1">
+      <div aria-live="polite" className="pointer-events-none fixed inset-x-0 top-[32vh] z-40 flex flex-col items-center gap-1">
         {floats.map((item) => (
           <span
             key={item.id}
-            className={`pixel animate-float-up text-sm sm:text-base ${TONES[item.tone]}`}
+            className={`animate-float-up font-display text-lg font-bold sm:text-xl ${TONES[item.tone]}`}
             style={{ animationDelay: `${item.offset * 120}ms` }}
           >
             {item.text}
@@ -138,26 +138,36 @@ function OverlayScreen({ overlay, onClose }: { overlay: NonNullable<Overlay>; on
   return (
     <div
       role="alertdialog"
-      aria-label={levelUp ? `Nivel nou: ${overlay.level}` : 'K.O.'}
+      aria-label={levelUp ? `Nivel nou: ${overlay.level}` : 'Ai căzut'}
       onClick={onClose}
-      className="fixed inset-0 z-[60] flex cursor-pointer items-center justify-center bg-void/80 px-4 backdrop-blur-sm"
+      className={`fixed inset-0 z-[60] flex cursor-pointer items-center justify-center px-4 ${
+        levelUp ? 'bg-abyss/80' : 'bg-black/85'
+      } animate-fade-in`}
     >
-      <div className="animate-pop text-center">
+      <div className="w-full text-center">
         {levelUp ? (
           <>
-            <p className="pixel animate-blink text-xs text-cyan">★ ★ ★</p>
-            <p className="pixel glow-gold mt-4 text-3xl text-gold sm:text-5xl">LEVEL UP!</p>
-            <p className="pixel glow-cyan mt-6 text-lg text-cyan sm:text-2xl">NIVEL {overlay.level}</p>
-            <p className="mt-4 text-lg text-ink">+{overlay.coins} monede bonus</p>
-          </>
-        ) : (
-          <>
-            <p className="pixel glow-danger text-5xl text-danger sm:text-7xl">K.O.</p>
-            <p className="mt-6 text-lg text-ink">HP-ul a ajuns la 0.</p>
-            <p className="text-lg text-muted">
-              Ai pierdut <strong className="text-gold">{overlay.coinsLost}</strong> monede și revii cu 50 HP.
+            <p className="ornament mx-auto max-w-md font-display text-sm tracking-[0.4em] text-gold uppercase">
+              <span>◆</span>
+            </p>
+            <p className="glow-gold mt-4 animate-pop font-display text-4xl font-black tracking-wider text-gold uppercase sm:text-6xl">
+              Ai avansat
+            </p>
+            <p className="mt-4 font-display text-2xl text-ink sm:text-3xl">Nivelul {overlay.level}</p>
+            <p className="mt-3 text-lg text-muted">
+              +{overlay.coins} <span className="text-gold">◈</span> aur
             </p>
           </>
+        ) : (
+          <div className="border-y border-blood/40 bg-gradient-to-r from-transparent via-black to-transparent py-10">
+            <p className="glow-blood animate-pop font-display text-5xl font-medium tracking-[0.15em] text-blood uppercase sm:text-7xl">
+              Ai căzut
+            </p>
+            <p className="mt-6 text-lg text-ink">Viața ta a ajuns la zero.</p>
+            <p className="text-lg text-muted">
+              Ai pierdut <strong className="text-gold">{overlay.coinsLost} aur</strong> și te ridici cu 50 de puncte de viață.
+            </p>
+          </div>
         )}
         <p className="mt-8 text-sm text-muted">Apasă oriunde pentru a continua</p>
       </div>

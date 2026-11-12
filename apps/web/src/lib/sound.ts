@@ -2,13 +2,13 @@
 type Sfx = 'coin' | 'levelUp' | 'damage' | 'ko' | 'denied' | 'undo' | 'click';
 
 const SEQUENCES: Record<Sfx, { notes: number[]; step: number; type: OscillatorType; volume: number }> = {
-  coin: { notes: [988, 1319], step: 0.07, type: 'square', volume: 0.05 },
-  levelUp: { notes: [523, 659, 784, 1047, 1319], step: 0.09, type: 'square', volume: 0.06 },
-  damage: { notes: [220, 165, 110], step: 0.08, type: 'sawtooth', volume: 0.06 },
-  ko: { notes: [392, 330, 262, 196, 131], step: 0.14, type: 'triangle', volume: 0.08 },
-  denied: { notes: [180, 180], step: 0.09, type: 'square', volume: 0.04 },
-  undo: { notes: [660, 440], step: 0.06, type: 'triangle', volume: 0.05 },
-  click: { notes: [1200], step: 0.03, type: 'square', volume: 0.025 },
+  coin: { notes: [1568, 2093], step: 0.09, type: 'triangle', volume: 0.06 },
+  levelUp: { notes: [262, 330, 392, 523, 659, 784], step: 0.13, type: 'triangle', volume: 0.07 },
+  damage: { notes: [110, 82, 65], step: 0.1, type: 'sawtooth', volume: 0.05 },
+  ko: { notes: [196, 185, 147, 110, 73], step: 0.32, type: 'sine', volume: 0.12 },
+  denied: { notes: [98, 98], step: 0.12, type: 'square', volume: 0.03 },
+  undo: { notes: [523, 392], step: 0.08, type: 'sine', volume: 0.06 },
+  click: { notes: [880], step: 0.04, type: 'triangle', volume: 0.03 },
 };
 
 let context: AudioContext | null = null;

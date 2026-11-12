@@ -44,15 +44,15 @@ export function QuestLog() {
 
   function celebrate(reward: RewardDto) {
     if (reward.tooFast) {
-      fx.float('PREA RAPID! 0 XP', 'info');
+      fx.float('Prea grăbit: fără răsplată', 'info');
       fx.sfx('denied');
       return;
     }
     if (reward.xp > 0) fx.float(`+${reward.xp} XP`, 'xp');
-    if (reward.coins > 0) fx.float(`+${reward.coins} ◇`, 'coin');
-    if (reward.hp > 0) fx.float(`+${reward.hp} HP`, 'hp');
-    if (reward.multiplier > 1) fx.float(`COMBO ×${reward.multiplier.toFixed(2)}`, 'combo');
-    if (reward.staminaCapped) fx.float(reward.xp > 0 ? 'STAMINA PLINĂ' : 'STAMINA PLINĂ: 0 XP', 'info');
+    if (reward.coins > 0) fx.float(`+${reward.coins} ◈ aur`, 'coin');
+    if (reward.hp > 0) fx.float(`+${reward.hp} viață`, 'hp');
+    if (reward.multiplier > 1) fx.float(`🔥 Serie ×${reward.multiplier.toFixed(2)}`, 'combo');
+    if (reward.staminaCapped) fx.float(reward.xp > 0 ? 'Stamina epuizată' : 'Stamina epuizată: fără experiență', 'info');
     if (reward.levelsGained > 0) setTimeout(() => fx.levelUp(reward.level, reward.levelsGained * 25), 700);
     else fx.sfx(reward.xp > 0 ? 'coin' : 'denied');
   }
@@ -63,7 +63,7 @@ export function QuestLog() {
     onSuccess: ({ task, user, reward }: TaskActionResponse, { kind }) => {
       if (kind === 'undo') {
         markSilentUpdate();
-        fx.float('UNDO', 'info');
+        fx.float('Anulat', 'info');
         fx.sfx('undo');
       }
       queryClient.setQueryData(['me'], user);
@@ -105,24 +105,24 @@ export function QuestLog() {
   return (
     <section aria-labelledby="quests-title" className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="quests-title" className="pixel glow-cyan text-base text-cyan">
-          QUEST LOG
+        <h2 id="quests-title" className="glow-gold font-display text-2xl font-bold text-gold">
+          Tabla de misiuni
         </h2>
         <Button onClick={() => setDialog({ kind: 'create' })}>+ Misiune nouă</Button>
       </div>
 
       {error && (
-        <p role="alert" className="rounded-md border-2 border-danger bg-danger/10 px-3 py-2 text-sm text-danger">
+        <p role="alert" className="rounded-md border-2 border-blood bg-blood/10 px-3 py-2 text-sm text-blood">
           {error}
         </p>
       )}
 
       {active.isPending ? (
-        <p role="status" className="pixel text-xs text-muted">
-          LOADING…
+        <p role="status" className="font-display text-muted">
+          Se aprind torțele…
         </p>
       ) : active.isError ? (
-        <p role="alert" className="text-danger">
+        <p role="alert" className="text-blood">
           Misiunile nu s-au putut încărca.{' '}
           <button type="button" className="underline" onClick={() => void active.refetch()}>
             Încearcă din nou
@@ -130,9 +130,9 @@ export function QuestLog() {
         </p>
       ) : items.length === 0 ? (
         <div className="panel border-dashed p-10 text-center">
-          <p className="pixel text-sm text-gold">NICIO MISIUNE ACTIVĂ</p>
+          <p className="font-display text-xl text-gold">Tabla e goală</p>
           <p className="mt-3 text-muted">
-            Adaugă o activitate cu termen și dificultate. Termin-o la timp ca să câștigi XP și monede și să-ți crești COMBO-ul.
+            Scrie o misiune cu termen și dificultate. Îndeplinește-o la timp ca să câștigi experiență și aur și să-ți ții seria.
           </p>
           <Button className="mt-5" onClick={() => setDialog({ kind: 'create' })}>
             Prima misiune
@@ -141,12 +141,12 @@ export function QuestLog() {
       ) : (
         <>
           {overdue.length > 0 && (
-            <TaskGroup title="⚠ INAMICI" count={overdue.length} tone="text-danger" hint="Misiuni ratate. Le poți termina și acum, pentru 25% XP.">
+            <TaskGroup title="☠ Monștri" count={overdue.length} tone="text-blood" hint="Misiuni ratate care te-au rănit. Le poți termina și acum, pentru 25% experiență.">
               {overdue.map(card)}
             </TaskGroup>
           )}
           {upcoming.length > 0 && (
-            <TaskGroup title="▶ MISIUNI ACTIVE" count={upcoming.length} tone="text-cyan">
+            <TaskGroup title="⚔ Misiuni în curs" count={upcoming.length} tone="text-ink">
               {upcoming.map(card)}
             </TaskGroup>
           )}
@@ -155,16 +155,16 @@ export function QuestLog() {
 
       {completed.length > 0 && (
         <details>
-          <summary className="pixel flex min-h-11 cursor-pointer items-center text-xs text-lime">
-            ✓ COMPLETATE ({completed.length})
+          <summary className="flex min-h-11 cursor-pointer items-center font-display font-bold text-heal">
+            ✓ Îndeplinite ({completed.length})
           </summary>
           <ul className="mt-2 space-y-3">{completed.map(card)}</ul>
         </details>
       )}
       {cancelled.length > 0 && (
         <details>
-          <summary className="pixel flex min-h-11 cursor-pointer items-center text-xs text-muted">
-            ✕ ABANDONATE ({cancelled.length})
+          <summary className="flex min-h-11 cursor-pointer items-center font-display font-bold text-muted">
+            ✕ Abandonate ({cancelled.length})
           </summary>
           <ul className="mt-2 space-y-3">{cancelled.map(card)}</ul>
         </details>
@@ -172,7 +172,7 @@ export function QuestLog() {
 
       <Modal
         open={dialog?.kind === 'create' || dialog?.kind === 'edit'}
-        title={dialog?.kind === 'edit' ? 'EDITEAZĂ MISIUNEA' : 'MISIUNE NOUĂ'}
+        title={dialog?.kind === 'edit' ? 'Rescrie misiunea' : 'Misiune nouă'}
         onClose={() => setDialog(null)}
       >
         {(dialog?.kind === 'create' || dialog?.kind === 'edit') && (
@@ -190,7 +190,7 @@ export function QuestLog() {
         )}
       </Modal>
 
-      <Modal open={dialog?.kind === 'delete'} title="ȘTERGI MISIUNEA?" onClose={() => setDialog(null)}>
+      <Modal open={dialog?.kind === 'delete'} title="Arzi sulul misiunii?" onClose={() => setDialog(null)}>
         {dialog?.kind === 'delete' && (
           <>
             <p className="text-ink">
@@ -226,8 +226,10 @@ export function QuestLog() {
 function TaskGroup({ title, count, hint, tone, children }: { title: string; count: number; hint?: string; tone: string; children: ReactNode }) {
   return (
     <div>
-      <h3 className={`pixel text-xs ${tone}`}>
-        {title} <span className="text-muted">({count})</span>
+      <h3 className={`ornament font-display text-lg font-bold ${tone}`}>
+        <span>
+          {title} <span className="text-muted">({count})</span>
+        </span>
       </h3>
       {hint && <p className="mt-1 text-sm text-muted">{hint}</p>}
       <ul className="mt-3 space-y-3">{children}</ul>

@@ -3,27 +3,24 @@ interface StatBarProps {
   value: number;
   max: number;
   color: 'xp' | 'hp' | 'stamina';
-  segments?: number;
 }
 
 const FILL = {
-  xp: 'bg-gold shadow-[0_0_6px_var(--color-gold)]',
-  hp: 'bg-lime shadow-[0_0_6px_var(--color-lime)]',
-  stamina: 'bg-cyan shadow-[0_0_6px_var(--color-cyan)]',
+  xp: 'from-[#f0c76c] via-[#d9ab4a] to-[#8a5f1c]',
+  hp: 'from-[#e5525a] via-[#d0323b] to-[#6e141a]',
+  stamina: 'from-[#79b0ee] via-[#4f8fd6] to-[#1f4f8a]',
 };
-const LABEL = { xp: 'text-gold', hp: 'text-lime', stamina: 'text-cyan' };
+const LABEL = { xp: 'text-gold', hp: 'text-blood', stamina: 'text-mana' };
 
-/** Bară segmentată ca în jocurile arcade; valoarea apare și ca text, nu doar prin culoare. */
-export function StatBar({ label, value, max, color, segments = 20 }: StatBarProps) {
-  const ratio = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0;
-  const filled = Math.round(ratio * segments);
-  const low = color === 'hp' && ratio <= 0.3;
+/** Bară de progres gravată; valoarea apare și ca text, nu doar prin culoare. */
+export function StatBar({ label, value, max, color }: StatBarProps) {
+  const percent = max > 0 ? Math.min(100, Math.max(0, (value / max) * 100)) : 0;
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between gap-2">
-        <span className={`pixel text-[10px] ${low ? 'text-danger' : LABEL[color]}`}>{label}</span>
-        <span className="pixel text-[10px] text-ink tabular-nums">
-          {value}/{max}
+        <span className={`font-display text-xs font-bold tracking-wider uppercase ${LABEL[color]}`}>{label}</span>
+        <span className="font-display text-xs text-ink tabular-nums">
+          {value} / {max}
         </span>
       </div>
       <div
@@ -32,16 +29,12 @@ export function StatBar({ label, value, max, color, segments = 20 }: StatBarProp
         aria-valuemin={0}
         aria-valuemax={max}
         aria-valuenow={value}
-        className="flex gap-[3px] rounded-sm border-2 border-line bg-void p-[3px]"
+        className="h-3.5 overflow-hidden rounded-[2px] border border-line bg-abyss shadow-[inset_0_2px_4px_rgb(0_0_0/0.8)]"
       >
-        {Array.from({ length: segments }, (_, i) => (
-          <span
-            key={i}
-            className={`h-3 flex-1 rounded-[1px] transition-colors duration-300 ${
-              i < filled ? (low ? 'bg-danger shadow-[0_0_6px_var(--color-danger)]' : FILL[color]) : 'bg-panel-2'
-            }`}
-          />
-        ))}
+        <div
+          className={`h-full bg-gradient-to-b ${FILL[color]} shadow-[inset_0_1px_0_rgb(255_255_255/0.25)] transition-[width] duration-700`}
+          style={{ width: `${percent}%` }}
+        />
       </div>
     </div>
   );

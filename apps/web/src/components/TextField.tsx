@@ -12,20 +12,20 @@ export function TextField({ label, error, hint, ...input }: TextFieldProps) {
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   return (
     <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-sm font-semibold tracking-wide text-muted uppercase">
+      <label htmlFor={id} className="block font-display text-xs font-bold tracking-wider text-muted uppercase">
         {label}
       </label>
       <input
         id={id}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
-        className={`block min-h-11 w-full rounded-md border-2 bg-void/70 px-3 py-2 text-base text-ink outline-none transition placeholder:text-muted/60 focus:border-cyan focus:shadow-[0_0_10px_color-mix(in_srgb,var(--color-cyan)_45%,transparent)] ${
-          error ? 'border-danger' : 'border-line'
+        className={`block min-h-11 w-full rounded-[3px] border-2 bg-abyss/80 px-3 py-2 text-base text-ink shadow-[inset_0_2px_6px_rgb(0_0_0/0.7)] outline-none transition placeholder:text-muted/60 focus:border-gold ${
+          error ? 'border-blood' : 'border-line'
         }`}
         {...input}
       />
       {error ? (
-        <p id={`${id}-error`} className="text-sm text-danger">
+        <p id={`${id}-error`} className="text-sm text-blood">
           ✖ {error}
         </p>
       ) : hint ? (

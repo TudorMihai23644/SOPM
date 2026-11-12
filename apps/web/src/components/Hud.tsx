@@ -2,12 +2,13 @@ import type { MeDto } from '@deadlinehero/shared';
 import { useEffect, useRef, useState } from 'react';
 import { useFx } from '../lib/fx';
 import { consumeSilentUpdate } from '../lib/player';
-import { HeroSprite, moodForHp } from './Sprite';
+import { Orb } from './Orb';
+import { HeroPortrait, moodForHp } from './Portrait';
 import { StatBar } from './StatBar';
 
 /**
- * HUD-ul jucătorului. Compară profilul cu cel anterior: o scădere de HP produce
- * o lovitură pe ecran, iar revenirea la 50 HP cu monede pierdute înseamnă K.O.
+ * Panoul eroului. Compară profilul cu cel anterior: o scădere de HP produce
+ * o lovitură pe ecran, iar revenirea la 50 HP cu monede pierdute înseamnă căderea eroului.
  */
 export function Hud({ me }: { me: MeDto }) {
   const fx = useFx();
@@ -25,7 +26,7 @@ export function Hud({ me }: { me: MeDto }) {
       fx.ko(before.coins - me.coins);
       fx.hit();
     } else if (lostHp > 0) {
-      fx.float(`−${lostHp} HP`, 'damage');
+      fx.float(`−${lostHp} viață`, 'damage');
       fx.sfx('damage');
       fx.hit();
     }
@@ -39,43 +40,34 @@ export function Hud({ me }: { me: MeDto }) {
     return () => clearTimeout(timer);
   }, [fx.hitCount]);
 
-  const mood = moodForHp(me.hp);
   return (
-    <section
-      aria-label="Starea eroului"
-      className={`panel relative overflow-hidden p-4 sm:p-5 ${shaking ? 'animate-shake border-danger' : ''}`}
-    >
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-        <div className="flex items-center gap-4 sm:flex-col sm:gap-2">
-          <div className="rounded-md border-2 border-line bg-void p-2">
-            <HeroSprite mood={mood} />
+    <section aria-label="Starea eroului" className={`panel panel-ornate p-4 sm:p-6 ${shaking ? 'animate-shake border-blood' : ''}`}>
+      <div className="grid grid-cols-2 items-center gap-4 sm:grid-cols-[auto_1fr_auto]">
+        <Orb label="Viață" value={me.hp} max={me.hpMax} kind="life" />
+
+        <div className="order-first col-span-2 flex flex-col items-center gap-3 text-center sm:order-none sm:col-span-1">
+          <div className="flex items-center gap-4">
+            <HeroPortrait mood={moodForHp(me.hp)} />
+            <div className="text-left">
+              <p className="font-display text-xl font-bold break-all text-ink">{me.nickname}</p>
+              <p className="font-display text-sm text-gold">Nivelul {me.level}</p>
+              <p className="text-sm text-muted" aria-label={`${me.coins} monede de aur`}>
+                <span className="text-gold">◈</span> {me.coins} aur
+              </p>
+            </div>
           </div>
-          <div className="sm:text-center">
-            <p className="pixel text-[10px] text-muted">PLAYER 1</p>
-            <p className="font-bold break-all text-ink">{me.nickname}</p>
+          <div className="w-full max-w-sm">
+            <StatBar label={`Experiență · nivelul ${me.level + 1}`} value={me.xpInLevel} max={me.xpToNextLevel} color="xp" />
           </div>
+          <p
+            className={`font-display text-sm font-bold ${me.comboMultiplier > 1 ? 'glow-ember text-ember' : 'text-muted'}`}
+            title="Seria: +5% experiență pentru fiecare zi la rând cu cel puțin o misiune terminată la timp (maximum ×1,5)"
+          >
+            🔥 Serie {me.streakDays} {me.streakDays === 1 ? 'zi' : 'zile'} · bonus ×{me.comboMultiplier.toFixed(2)}
+          </p>
         </div>
 
-        <div className="min-w-0 flex-1 space-y-3">
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <p className="pixel glow-cyan text-sm text-cyan">LVL {String(me.level).padStart(2, '0')}</p>
-            <p className="pixel glow-gold text-sm text-gold" aria-label={`${me.coins} monede`}>
-              ◇ {String(me.coins).padStart(4, '0')}
-            </p>
-            <p
-              className={`pixel text-sm ${me.comboMultiplier > 1 ? 'glow-pink text-pink' : 'text-muted'}`}
-              title="COMBO: +5% XP pentru fiecare zi la rând cu cel puțin o misiune terminată la timp (maximum ×1,5)"
-            >
-              COMBO ×{me.comboMultiplier.toFixed(2)}
-            </p>
-            <p className="text-sm text-muted">
-              Serie: <strong className="text-ink">{me.streakDays}</strong> {me.streakDays === 1 ? 'zi' : 'zile'}
-            </p>
-          </div>
-          <StatBar label="HP" value={me.hp} max={me.hpMax} color="hp" />
-          <StatBar label={`XP → LVL ${me.level + 1}`} value={me.xpInLevel} max={me.xpToNextLevel} color="xp" />
-          <StatBar label="STAMINA AZI" value={me.staminaUsed} max={me.staminaMax} color="stamina" segments={15} />
-        </div>
+        <Orb label="Stamina" value={me.staminaMax - me.staminaUsed} max={me.staminaMax} kind="stamina" />
       </div>
     </section>
   );

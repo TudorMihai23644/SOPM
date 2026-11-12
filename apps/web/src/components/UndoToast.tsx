@@ -23,15 +23,12 @@ export function UndoToast({ message, until, onUndo, onExpire }: UndoToastProps) 
   }, [until]);
 
   return (
-    <div
-      role="status"
-      className="panel fixed inset-x-4 bottom-4 z-30 mx-auto flex max-w-md items-center justify-between gap-4 border-lime px-4 py-3 shadow-[0_0_20px_color-mix(in_srgb,var(--color-lime)_30%,transparent)]"
-    >
+    <div role="status" className="panel fixed inset-x-4 bottom-4 z-30 mx-auto flex max-w-md items-center justify-between gap-4 border-gold px-4 py-3">
       <span className="text-ink">{message}</span>
       <button
         type="button"
         onClick={onUndo}
-        className="min-h-11 shrink-0 rounded-md border-2 border-gold px-3 font-bold text-gold uppercase hover:bg-gold/10"
+        className="min-h-11 shrink-0 rounded-[3px] border-2 border-line px-3 font-display text-sm font-bold tracking-wider text-gold uppercase hover:border-gold"
       >
         Anulează · {seconds}s
       </button>

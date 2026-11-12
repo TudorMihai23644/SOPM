@@ -9,8 +9,8 @@ import { RegisterPage } from './pages/RegisterPage';
 
 function Loading() {
   return (
-    <div role="status" className="pixel flex min-h-screen items-center justify-center text-xs text-cyan">
-      LOADING…
+    <div role="status" className="flex min-h-screen items-center justify-center font-display text-gold">
+      Se aprind torțele…
     </div>
   );
 }
