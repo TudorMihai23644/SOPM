@@ -39,10 +39,10 @@ export function RegisterPage() {
   }
 
   return (
-    <AuthLayout title="Creează-ți eroul" subtitle="Termină activitățile la timp și câștigă XP și monede.">
+    <AuthLayout title="JOC NOU" subtitle="Termină misiunile la timp, câștigă XP și monede, nu-ți pierde HP-ul.">
       <form className="space-y-4" onSubmit={onSubmit} noValidate>
         {errors.form && (
-          <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          <p role="alert" className="rounded-md border-2 border-danger bg-danger/10 px-3 py-2 text-sm text-danger">
             {errors.form}
           </p>
         )}
@@ -72,12 +72,12 @@ export function RegisterPage() {
           onChange={(e) => setValues({ ...values, password: e.target.value })}
         />
         <Button type="submit" className="w-full" loading={submitting}>
-          Creează contul
+          Creează eroul
         </Button>
       </form>
-      <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
+      <p className="mt-6 text-center text-sm text-muted">
         Ai deja cont?{' '}
-        <Link to="/autentificare" className="font-semibold text-brand-600 hover:underline dark:text-brand-500">
+        <Link to="/autentificare" className="font-bold text-cyan uppercase hover:underline">
           Intră în cont
         </Link>
       </p>

@@ -1,30 +1,129 @@
+@import "@fontsource/press-start-2p/400.css";
+@import "@fontsource/chakra-petch/400.css";
+@import "@fontsource/chakra-petch/600.css";
+@import "@fontsource/chakra-petch/700.css";
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-brand-50: #eef2ff;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
-  --color-xp: #f59e0b;
-  --color-hp: #ef4444;
+  --font-sans: "Chakra Petch", ui-sans-serif, system-ui, sans-serif;
+  --font-pixel: "Press Start 2P", ui-monospace, monospace;
+
+  --color-void: #07071a;
+  --color-panel: #0e0f2e;
+  --color-panel-2: #16184a;
+  --color-line: #2c2f7a;
+  --color-ink: #eef0ff;
+  --color-muted: #a3aae0;
+
+  --color-cyan: #22e3f5;
+  --color-pink: #ff4fd8;
+  --color-lime: #a8ff3e;
+  --color-gold: #ffd23f;
+  --color-danger: #ff4d6d;
+  --color-violet: #9b7bff;
+
+  --animate-float-up: float-up 1.6s ease-out forwards;
+  --animate-shake: shake 0.45s ease-in-out;
+  --animate-pop: pop 0.35s ease-out;
+  --animate-blink: blink 1s steps(2, start) infinite;
+  --animate-glow: glow 1.6s ease-in-out infinite;
+
+  @keyframes float-up {
+    0% { opacity: 0; transform: translateY(12px) scale(0.9); }
+    15% { opacity: 1; transform: translateY(0) scale(1.1); }
+    100% { opacity: 0; transform: translateY(-70px) scale(1); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  @keyframes pop {
+    0% { transform: scale(0.6); opacity: 0; }
+    70% { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+  @keyframes blink {
+    to { visibility: hidden; }
+  }
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 6px var(--color-danger), inset 0 0 6px color-mix(in srgb, var(--color-danger) 30%, transparent); }
+    50% { box-shadow: 0 0 18px var(--color-danger), inset 0 0 10px color-mix(in srgb, var(--color-danger) 45%, transparent); }
+  }
 }
 
 @layer base {
   html {
-    color-scheme: light dark;
+    color-scheme: dark;
   }
 
   body {
-    @apply min-h-screen bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+    @apply min-h-screen bg-void font-sans text-ink antialiased;
+    background-image:
+      radial-gradient(ellipse at top, color-mix(in srgb, var(--color-violet) 22%, transparent), transparent 60%),
+      linear-gradient(color-mix(in srgb, var(--color-line) 35%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in srgb, var(--color-line) 35%, transparent) 1px, transparent 1px);
+    background-size: 100% 100%, 40px 40px, 40px 40px;
+    background-attachment: fixed;
   }
 
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      transition-duration: 0ms !important;
-      animation-duration: 0ms !important;
-    }
+  /* Liniile de ecran CRT; dispar în modul calm. */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    background: repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.12) 0 1px, transparent 1px 3px);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-cyan);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-pink);
+    color: var(--color-void);
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-lg border-2 border-line bg-panel/90 backdrop-blur-sm;
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.4), 0 8px 30px rgb(0 0 0 / 0.45);
+  }
+
+  .pixel {
+    font-family: var(--font-pixel);
+    letter-spacing: 0.02em;
+    line-height: 1.5;
+  }
+
+  .glow-cyan { text-shadow: 0 0 8px color-mix(in srgb, var(--color-cyan) 70%, transparent); }
+  .glow-pink { text-shadow: 0 0 8px color-mix(in srgb, var(--color-pink) 70%, transparent); }
+  .glow-gold { text-shadow: 0 0 8px color-mix(in srgb, var(--color-gold) 70%, transparent); }
+  .glow-lime { text-shadow: 0 0 8px color-mix(in srgb, var(--color-lime) 70%, transparent); }
+  .glow-danger { text-shadow: 0 0 8px color-mix(in srgb, var(--color-danger) 70%, transparent); }
+}
+
+/* Modul calm și „reduce motion”: fără animații, fără linii CRT. */
+html[data-calm="true"] *,
+html[data-calm="true"] *::before,
+html[data-calm="true"] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+html[data-calm="true"] body::after {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0ms !important;
+    transition-duration: 0ms !important;
   }
 }

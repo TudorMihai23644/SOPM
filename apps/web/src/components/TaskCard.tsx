@@ -1,5 +1,7 @@
-import { DIFFICULTY_LABELS, type TaskDto } from '@deadlinehero/shared';
+import { DEFAULT_GAME_CONFIG, DIFFICULTY_LABELS, type Difficulty, type TaskDto } from '@deadlinehero/shared';
 import { formatDateTime, formatRelative } from '../lib/time';
+import { Countdown } from './Countdown';
+import { MonsterSprite } from './Sprite';
 import { StatusBadge } from './StatusBadge';
 
 interface TaskCardProps {
@@ -11,24 +13,27 @@ interface TaskCardProps {
   onDelete: () => void;
 }
 
-const DIFFICULTY_STYLE = {
-  EASY: 'text-emerald-700 dark:text-emerald-400',
-  MEDIUM: 'text-amber-700 dark:text-amber-400',
-  HARD: 'text-red-700 dark:text-red-400',
+const DIFFICULTY_STYLE: Record<Difficulty, { tag: string; accent: string }> = {
+  EASY: { tag: 'border-lime text-lime', accent: 'before:bg-lime' },
+  MEDIUM: { tag: 'border-gold text-gold', accent: 'before:bg-gold' },
+  HARD: { tag: 'border-pink text-pink', accent: 'before:bg-pink' },
 };
 
 const actionClass =
-  'inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800';
+  'inline-flex min-h-11 items-center rounded-md px-3 text-sm font-bold tracking-wide text-muted uppercase hover:bg-panel-2 hover:text-ink disabled:opacity-50';
 
 export function TaskCard({ task, busy, onComplete, onEdit, onCancel, onDelete }: TaskCardProps) {
   const active = task.status === 'UPCOMING' || task.status === 'OVERDUE';
-  const closed = !active;
+  const overdue = task.status === 'OVERDUE';
+  const boss = task.difficulty === 'HARD';
+  const values = DEFAULT_GAME_CONFIG.difficulty[task.difficulty];
+  const style = DIFFICULTY_STYLE[task.difficulty];
 
   return (
     <li
-      className={`rounded-xl border bg-white p-4 shadow-sm dark:bg-slate-900 ${
-        task.status === 'OVERDUE' ? 'border-red-300 dark:border-red-900' : 'border-slate-200 dark:border-slate-800'
-      }`}
+      className={`panel relative overflow-hidden p-4 pl-5 before:absolute before:inset-y-0 before:left-0 before:w-1.5 ${style.accent} ${
+        overdue ? 'animate-glow border-danger' : ''
+      } ${!active ? 'opacity-70' : ''}`}
     >
       <div className="flex items-start gap-3">
         {active && (
@@ -37,35 +42,52 @@ export function TaskCard({ task, busy, onComplete, onEdit, onCancel, onDelete }:
             onClick={onComplete}
             disabled={busy}
             aria-label={`Marchează „${task.title}” ca finalizată`}
-            title="Marchează ca finalizată"
-            className="mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-slate-300 text-lg text-transparent transition hover:border-emerald-500 hover:text-emerald-500 disabled:opacity-50 dark:border-slate-600"
+            title="Misiune îndeplinită!"
+            className="group mt-0.5 inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-md border-2 border-lime text-xl text-lime/40 transition hover:bg-lime hover:text-void hover:shadow-[0_0_14px_var(--color-lime)] disabled:opacity-50"
           >
             ✓
           </button>
         )}
+
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className={`font-semibold break-words ${closed ? 'text-slate-500 line-through dark:text-slate-400' : ''}`}>
-              {task.title}
-            </h3>
+            <span className={`rounded-sm border px-1.5 py-0.5 text-[11px] font-bold uppercase ${style.tag}`}>
+              {boss ? '☠ Boss' : DIFFICULTY_LABELS[task.difficulty]}
+            </span>
             <StatusBadge status={task.status} />
+            {active && <Countdown deadline={task.deadlineAt} />}
           </div>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            <span className={`font-medium ${DIFFICULTY_STYLE[task.difficulty]}`}>{DIFFICULTY_LABELS[task.difficulty]}</span>
-            {' · '}
+          <h3 className={`mt-2 text-lg font-bold break-words ${active ? 'text-ink' : 'text-muted line-through'}`}>
+            {task.title}
+          </h3>
+          <p className="mt-0.5 text-sm text-muted">
             {task.status === 'COMPLETED' && task.completedAt ? (
-              <>Finalizată {formatRelative(task.completedAt)}</>
+              <>Terminată {formatRelative(task.completedAt)}</>
             ) : (
               <>
                 Termen <time dateTime={task.deadlineAt}>{formatDateTime(task.deadlineAt)}</time>
-                {active && <> ({formatRelative(task.deadlineAt)})</>}
               </>
             )}
             {task.postponeCount > 0 && <> · amânată {task.postponeCount === 1 ? 'o dată' : `de ${task.postponeCount} ori`}</>}
           </p>
-          {task.description && (
-            <p className="mt-2 text-sm whitespace-pre-line text-slate-700 dark:text-slate-300">{task.description}</p>
+          {task.description && <p className="mt-2 text-sm whitespace-pre-line text-ink/85">{task.description}</p>}
+
+          {active && (
+            <p className="mt-2 text-xs font-semibold tracking-wide uppercase">
+              {overdue ? (
+                <span className="text-danger">Te-a lovit: −{values.hpLoss} HP · încă o poți termina pentru 25% XP</span>
+              ) : (
+                <>
+                  <span className="text-gold">Recompensă: {values.xp} XP</span>
+                  <span className="text-muted"> · </span>
+                  <span className="text-cyan">◇ {values.coins}</span>
+                  <span className="text-muted"> · </span>
+                  <span className="text-danger">Ratezi: −{values.hpLoss} HP</span>
+                </>
+              )}
+            </p>
           )}
+
           <div className="mt-2 -ml-3 flex flex-wrap">
             {task.status === 'UPCOMING' && (
               <button type="button" className={actionClass} onClick={onEdit} disabled={busy}>
@@ -74,14 +96,20 @@ export function TaskCard({ task, busy, onComplete, onEdit, onCancel, onDelete }:
             )}
             {active && (
               <button type="button" className={actionClass} onClick={onCancel} disabled={busy}>
-                Anulează
+                Abandonează
               </button>
             )}
-            <button type="button" className={`${actionClass} text-red-700 dark:text-red-400`} onClick={onDelete} disabled={busy}>
+            <button type="button" className={`${actionClass} hover:text-danger`} onClick={onDelete} disabled={busy}>
               Șterge
             </button>
           </div>
         </div>
+
+        {overdue && (
+          <div className="hidden shrink-0 self-center sm:block" aria-hidden="true">
+            <MonsterSprite boss={boss} />
+          </div>
+        )}
       </div>
     </li>
   );

@@ -2,20 +2,28 @@ interface StatBarProps {
   label: string;
   value: number;
   max: number;
-  color: 'xp' | 'hp';
+  color: 'xp' | 'hp' | 'stamina';
+  segments?: number;
 }
 
-const FILL = { xp: 'bg-xp', hp: 'bg-hp' };
+const FILL = {
+  xp: 'bg-gold shadow-[0_0_6px_var(--color-gold)]',
+  hp: 'bg-lime shadow-[0_0_6px_var(--color-lime)]',
+  stamina: 'bg-cyan shadow-[0_0_6px_var(--color-cyan)]',
+};
+const LABEL = { xp: 'text-gold', hp: 'text-lime', stamina: 'text-cyan' };
 
-/** Bară de progres pentru XP și HP; valoarea apare și ca text, nu doar prin culoare. */
-export function StatBar({ label, value, max, color }: StatBarProps) {
-  const percent = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
+/** Bară segmentată ca în jocurile arcade; valoarea apare și ca text, nu doar prin culoare. */
+export function StatBar({ label, value, max, color, segments = 20 }: StatBarProps) {
+  const ratio = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0;
+  const filled = Math.round(ratio * segments);
+  const low = color === 'hp' && ratio <= 0.3;
   return (
     <div>
-      <div className="mb-1 flex justify-between text-sm">
-        <span className="font-medium">{label}</span>
-        <span className="tabular-nums text-slate-600 dark:text-slate-400">
-          {value} / {max}
+      <div className="mb-1 flex items-baseline justify-between gap-2">
+        <span className={`pixel text-[10px] ${low ? 'text-danger' : LABEL[color]}`}>{label}</span>
+        <span className="pixel text-[10px] text-ink tabular-nums">
+          {value}/{max}
         </span>
       </div>
       <div
@@ -24,9 +32,16 @@ export function StatBar({ label, value, max, color }: StatBarProps) {
         aria-valuemin={0}
         aria-valuemax={max}
         aria-valuenow={value}
-        className="h-3 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
+        className="flex gap-[3px] rounded-sm border-2 border-line bg-void p-[3px]"
       >
-        <div className={`h-full rounded-full transition-[width] duration-500 ${FILL[color]}`} style={{ width: `${percent}%` }} />
+        {Array.from({ length: segments }, (_, i) => (
+          <span
+            key={i}
+            className={`h-3 flex-1 rounded-[1px] transition-colors duration-300 ${
+              i < filled ? (low ? 'bg-danger shadow-[0_0_6px_var(--color-danger)]' : FILL[color]) : 'bg-panel-2'
+            }`}
+          />
+        ))}
       </div>
     </div>
   );

@@ -1,12 +1,32 @@
-import { HISTORY_EVENT_LABELS, type MeDto } from '@deadlinehero/shared';
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { HISTORY_EVENT_LABELS, type HistoryEntryDto } from '@deadlinehero/shared';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { AppHeader } from '../components/AppHeader';
 import { Button } from '../components/Button';
 import { api } from '../lib/api';
 import { formatDateTime } from '../lib/time';
 
-export function HistoryPage({ initialUser }: { initialUser: MeDto }) {
-  const { data: me = initialUser } = useQuery({ queryKey: ['me'], queryFn: api.me, initialData: initialUser });
+const EVENT_TONE: Record<string, string> = {
+  CREATED: 'text-cyan',
+  COMPLETED: 'text-lime',
+  COMPLETED_LATE: 'text-gold',
+  CANCELLED: 'text-muted',
+  OVERDUE: 'text-danger',
+  UNDONE: 'text-violet',
+  POSTPONED: 'text-gold',
+  DELETED: 'text-muted',
+};
+
+const NOTES: Record<string, string> = {
+  TOO_FAST: 'prea rapid, fără recompensă',
+  KO: 'K.O.!',
+};
+
+function describe(entry: HistoryEntryDto): string {
+  const label = HISTORY_EVENT_LABELS[entry.event];
+  return entry.note && NOTES[entry.note] ? `${label} · ${NOTES[entry.note]}` : label;
+}
+
+export function HistoryPage() {
   const history = useInfiniteQuery({
     queryKey: ['history'],
     queryFn: ({ pageParam }) => api.history(pageParam),
@@ -17,28 +37,28 @@ export function HistoryPage({ initialUser }: { initialUser: MeDto }) {
 
   return (
     <div className="min-h-screen">
-      <AppHeader nickname={me.nickname} />
+      <AppHeader />
       <main className="mx-auto max-w-4xl px-4 py-8">
-        <h1 className="text-2xl font-bold">Istoric</h1>
-        <p className="mt-1 text-slate-600 dark:text-slate-400">Fiecare schimbare de stare a activităților tale, cea mai nouă prima.</p>
+        <h1 className="pixel glow-cyan text-base text-cyan">ISTORIC</h1>
+        <p className="mt-3 text-muted">Fiecare schimbare de stare a misiunilor tale, cea mai nouă prima.</p>
 
         {history.isPending ? (
-          <p role="status" className="mt-6 text-slate-500">
-            Se încarcă…
+          <p role="status" className="pixel mt-6 text-xs text-muted">
+            LOADING…
           </p>
         ) : entries.length === 0 ? (
-          <p className="mt-6 rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-600 dark:border-slate-700 dark:text-slate-400">
-            Încă nu s-a întâmplat nimic. Creează o activitate din Quest Log.
+          <p className="panel mt-6 border-dashed p-10 text-center text-muted">
+            Încă nu s-a întâmplat nimic. Creează o misiune din Quest Log.
           </p>
         ) : (
-          <ol className="mt-6 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900">
+          <ol className="panel mt-6 divide-y-2 divide-line">
             {entries.map((entry) => (
               <li key={entry.id} className="flex flex-wrap items-baseline justify-between gap-2 px-4 py-3">
                 <div className="min-w-0">
-                  <p className="font-medium break-words">{entry.taskTitle}</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">{HISTORY_EVENT_LABELS[entry.event]}</p>
+                  <p className="font-bold break-words text-ink">{entry.taskTitle}</p>
+                  <p className={`text-sm font-semibold uppercase ${EVENT_TONE[entry.event] ?? 'text-muted'}`}>{describe(entry)}</p>
                 </div>
-                <time dateTime={entry.at} className="text-sm text-slate-500 tabular-nums">
+                <time dateTime={entry.at} className="text-sm text-muted tabular-nums">
                   {formatDateTime(entry.at)}
                 </time>
               </li>

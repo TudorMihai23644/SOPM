@@ -23,7 +23,7 @@ interface TaskFormProps {
 const DIFFICULTY_HINTS: Record<Difficulty, string> = Object.fromEntries(
   DIFFICULTIES.map((d) => {
     const v = DEFAULT_GAME_CONFIG.difficulty[d];
-    return [d, `${v.xp} XP · ${v.coins} monede · −${v.hpLoss} HP dacă întârzii`];
+    return [d, `+${v.xp} XP · ◇${v.coins} · −${v.hpLoss} HP dacă ratezi`];
   }),
 ) as Record<Difficulty, string>;
 
@@ -86,7 +86,7 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
   return (
     <form className="space-y-4" onSubmit={handleSubmit} noValidate>
       {errors.form && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+        <p role="alert" className="rounded-md border-2 border-danger bg-danger/10 px-3 py-2 text-sm text-danger">
           {errors.form}
         </p>
       )}
@@ -108,44 +108,44 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
       />
 
       {task ? (
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Dificultate: <strong>{DIFFICULTY_LABELS[task.difficulty]}</strong> (nu se mai poate schimba)
+        <p className="text-sm text-muted">
+          Dificultate: <strong className="text-ink">{DIFFICULTY_LABELS[task.difficulty]}</strong> (nu se mai poate schimba)
         </p>
       ) : (
         <fieldset>
-          <legend className="mb-1.5 text-sm font-medium">Dificultate</legend>
+          <legend className="mb-1.5 text-sm font-semibold tracking-wide text-muted uppercase">Dificultate</legend>
           <div className="grid gap-2 sm:grid-cols-3">
             {DIFFICULTIES.map((difficulty) => (
               <label
                 key={difficulty}
-                className={`flex min-h-11 cursor-pointer flex-col rounded-lg border px-3 py-2 text-sm transition ${
+                className={`flex min-h-11 cursor-pointer flex-col rounded-md border-2 px-3 py-2 text-sm transition ${
                   values.difficulty === difficulty
-                    ? 'border-brand-600 bg-brand-50 ring-1 ring-brand-600 dark:bg-slate-800'
-                    : 'border-slate-300 dark:border-slate-700'
+                    ? 'border-pink bg-pink/10 shadow-[0_0_10px_color-mix(in_srgb,var(--color-pink)_40%,transparent)]'
+                    : 'border-line hover:border-muted'
                 }`}
               >
-                <span className="flex items-center gap-2 font-semibold">
+                <span className="flex items-center gap-2 font-bold uppercase">
                   <input
                     type="radio"
                     name="difficulty"
                     value={difficulty}
                     checked={values.difficulty === difficulty}
                     onChange={() => setValues({ ...values, difficulty })}
-                    className="accent-brand-600"
+                    className="accent-pink"
                   />
-                  {DIFFICULTY_LABELS[difficulty]}
+                  {difficulty === 'HARD' ? '☠ Boss' : DIFFICULTY_LABELS[difficulty]}
                 </span>
-                <span className="mt-1 text-xs text-slate-600 dark:text-slate-400">{DIFFICULTY_HINTS[difficulty]}</span>
+                <span className="mt-1 text-xs text-muted">{DIFFICULTY_HINTS[difficulty]}</span>
               </label>
             ))}
           </div>
-          {errors.difficulty && <p className="mt-1 text-sm text-red-600">{errors.difficulty}</p>}
+          {errors.difficulty && <p className="mt-1 text-sm text-danger">✖ {errors.difficulty}</p>}
         </fieldset>
       )}
 
       <div className="space-y-1.5">
-        <label htmlFor={descriptionId} className="block text-sm font-medium">
-          Descriere <span className="font-normal text-slate-500">(opțional)</span>
+        <label htmlFor={descriptionId} className="block text-sm font-semibold tracking-wide text-muted uppercase">
+          Descriere <span className="font-normal normal-case">(opțional)</span>
         </label>
         <textarea
           id={descriptionId}
@@ -153,9 +153,9 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
           maxLength={2000}
           value={values.description}
           onChange={(e) => setValues({ ...values, description: e.target.value })}
-          className="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base shadow-sm outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:bg-slate-900"
+          className="block w-full rounded-md border-2 border-line bg-void/70 px-3 py-2 text-base text-ink outline-none focus:border-cyan"
         />
-        {errors.description && <p className="text-sm text-red-600">{errors.description}</p>}
+        {errors.description && <p className="text-sm text-danger">✖ {errors.description}</p>}
       </div>
 
       <div className="flex justify-end gap-2 pt-2">
@@ -163,7 +163,7 @@ export function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
           Renunță
         </Button>
         <Button type="submit" loading={submitting}>
-          {task ? 'Salvează' : 'Adaugă activitatea'}
+          {task ? 'Salvează' : 'Acceptă misiunea'}
         </Button>
       </div>
     </form>

@@ -1,7 +1,9 @@
-import type { TaskDto, TaskStatus } from '@deadlinehero/shared';
+import type { RewardDto, TaskActionResponse, TaskDto, TaskStatus } from '@deadlinehero/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { api, ApiRequestError } from '../lib/api';
+import { useFx } from '../lib/fx';
+import { markSilentUpdate } from '../lib/player';
 import { Button } from './Button';
 import { Modal } from './Modal';
 import { TaskCard } from './TaskCard';
@@ -12,34 +14,66 @@ const ACTIVE: TaskStatus[] = ['UPCOMING', 'OVERDUE'];
 const CLOSED: TaskStatus[] = ['COMPLETED', 'CANCELLED'];
 
 type Dialog = { kind: 'create' } | { kind: 'edit'; task: TaskDto } | { kind: 'delete'; task: TaskDto } | null;
+type ActionKind = 'complete' | 'cancel' | 'undo';
 
 export function QuestLog() {
   const queryClient = useQueryClient();
+  const fx = useFx();
   const [dialog, setDialog] = useState<Dialog>(null);
   const [undo, setUndo] = useState<TaskDto | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Lista activă se reîmprospătează la un minut, ca activitățile să treacă singure în Restant.
+  // Lista activă se reîmprospătează la un minut, ca misiunile ratate să treacă singure în Restant.
   const active = useQuery({
     queryKey: ['tasks', 'active'],
     queryFn: () => api.tasks.list({ status: ACTIVE, sort: 'deadline' }),
     refetchInterval: 60_000,
   });
+  // Citirea listei poate trece misiuni în Restant (și scădea HP), deci profilul se reîncarcă după ea.
+  useEffect(() => {
+    if (active.dataUpdatedAt) void queryClient.invalidateQueries({ queryKey: ['me'] });
+  }, [active.dataUpdatedAt, queryClient]);
+
   const closed = useQuery({
     queryKey: ['tasks', 'closed'],
     queryFn: () => api.tasks.list({ status: CLOSED, sort: 'recent', limit: 20 }),
   });
 
-  const refresh = () => queryClient.invalidateQueries({ predicate: (q) => ['tasks', 'history', 'me'].includes(String(q.queryKey[0])) });
+  const refresh = () =>
+    queryClient.invalidateQueries({ predicate: (q) => ['tasks', 'history', 'me'].includes(String(q.queryKey[0])) });
+
+  function celebrate(reward: RewardDto) {
+    if (reward.tooFast) {
+      fx.float('PREA RAPID! 0 XP', 'info');
+      fx.sfx('denied');
+      return;
+    }
+    if (reward.xp > 0) fx.float(`+${reward.xp} XP`, 'xp');
+    if (reward.coins > 0) fx.float(`+${reward.coins} ◇`, 'coin');
+    if (reward.hp > 0) fx.float(`+${reward.hp} HP`, 'hp');
+    if (reward.multiplier > 1) fx.float(`COMBO ×${reward.multiplier.toFixed(2)}`, 'combo');
+    if (reward.staminaCapped) fx.float(reward.xp > 0 ? 'STAMINA PLINĂ' : 'STAMINA PLINĂ: 0 XP', 'info');
+    if (reward.levelsGained > 0) setTimeout(() => fx.levelUp(reward.level, reward.levelsGained * 25), 700);
+    else fx.sfx(reward.xp > 0 ? 'coin' : 'denied');
+  }
 
   const action = useMutation({
-    mutationFn: async ({ kind, task }: { kind: 'complete' | 'cancel' | 'undo'; task: TaskDto }) => api.tasks[kind](task.id),
+    mutationFn: ({ kind, task }: { kind: ActionKind; task: TaskDto }) => api.tasks[kind](task.id),
     onMutate: () => setError(null),
-    onSuccess: ({ task, user }, { kind }) => {
+    onSuccess: ({ task, user, reward }: TaskActionResponse, { kind }) => {
+      if (kind === 'undo') {
+        markSilentUpdate();
+        fx.float('UNDO', 'info');
+        fx.sfx('undo');
+      }
       queryClient.setQueryData(['me'], user);
+      if (reward) celebrate(reward);
       setUndo(kind === 'complete' && task.undoAvailableUntil ? task : null);
     },
-    onError: (err) => setError(err instanceof ApiRequestError ? err.message : 'Acțiunea nu a reușit.'),
+    onError: (err) => {
+      fx.sfx('denied');
+      setError(err instanceof ApiRequestError ? err.message : 'Acțiunea nu a reușit.');
+    },
     onSettled: refresh,
   });
 
@@ -71,48 +105,48 @@ export function QuestLog() {
   return (
     <section aria-labelledby="quests-title" className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="quests-title" className="text-xl font-bold">
-          Quest Log
+        <h2 id="quests-title" className="pixel glow-cyan text-base text-cyan">
+          QUEST LOG
         </h2>
-        <Button onClick={() => setDialog({ kind: 'create' })}>+ Activitate nouă</Button>
+        <Button onClick={() => setDialog({ kind: 'create' })}>+ Misiune nouă</Button>
       </div>
 
       {error && (
-        <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+        <p role="alert" className="rounded-md border-2 border-danger bg-danger/10 px-3 py-2 text-sm text-danger">
           {error}
         </p>
       )}
 
       {active.isPending ? (
-        <p role="status" className="text-slate-500">
-          Se încarcă activitățile…
+        <p role="status" className="pixel text-xs text-muted">
+          LOADING…
         </p>
       ) : active.isError ? (
-        <p role="alert" className="text-red-600">
-          Activitățile nu s-au putut încărca.{' '}
+        <p role="alert" className="text-danger">
+          Misiunile nu s-au putut încărca.{' '}
           <button type="button" className="underline" onClick={() => void active.refetch()}>
             Încearcă din nou
           </button>
         </p>
       ) : items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 p-10 text-center dark:border-slate-700">
-          <p className="font-semibold">Nicio misiune activă</p>
-          <p className="mt-1 text-slate-600 dark:text-slate-400">
-            Adaugă o activitate cu termen și dificultate. Dacă o termini la timp, primești XP și monede.
+        <div className="panel border-dashed p-10 text-center">
+          <p className="pixel text-sm text-gold">NICIO MISIUNE ACTIVĂ</p>
+          <p className="mt-3 text-muted">
+            Adaugă o activitate cu termen și dificultate. Termin-o la timp ca să câștigi XP și monede și să-ți crești COMBO-ul.
           </p>
-          <Button className="mt-4" onClick={() => setDialog({ kind: 'create' })}>
-            Adaugă prima activitate
+          <Button className="mt-5" onClick={() => setDialog({ kind: 'create' })}>
+            Prima misiune
           </Button>
         </div>
       ) : (
         <>
           {overdue.length > 0 && (
-            <TaskGroup title="Restant" count={overdue.length} hint="Le poți termina și acum, cu recompensă redusă.">
+            <TaskGroup title="⚠ INAMICI" count={overdue.length} tone="text-danger" hint="Misiuni ratate. Le poți termina și acum, pentru 25% XP.">
               {overdue.map(card)}
             </TaskGroup>
           )}
           {upcoming.length > 0 && (
-            <TaskGroup title="Urmează" count={upcoming.length}>
+            <TaskGroup title="▶ MISIUNI ACTIVE" count={upcoming.length} tone="text-cyan">
               {upcoming.map(card)}
             </TaskGroup>
           )}
@@ -120,23 +154,25 @@ export function QuestLog() {
       )}
 
       {completed.length > 0 && (
-        <details className="group">
-          <summary className="flex min-h-11 cursor-pointer items-center font-semibold">
-            Completate recent ({completed.length})
+        <details>
+          <summary className="pixel flex min-h-11 cursor-pointer items-center text-xs text-lime">
+            ✓ COMPLETATE ({completed.length})
           </summary>
           <ul className="mt-2 space-y-3">{completed.map(card)}</ul>
         </details>
       )}
       {cancelled.length > 0 && (
         <details>
-          <summary className="flex min-h-11 cursor-pointer items-center font-semibold">Anulate ({cancelled.length})</summary>
+          <summary className="pixel flex min-h-11 cursor-pointer items-center text-xs text-muted">
+            ✕ ABANDONATE ({cancelled.length})
+          </summary>
           <ul className="mt-2 space-y-3">{cancelled.map(card)}</ul>
         </details>
       )}
 
       <Modal
         open={dialog?.kind === 'create' || dialog?.kind === 'edit'}
-        title={dialog?.kind === 'edit' ? 'Editează activitatea' : 'Activitate nouă'}
+        title={dialog?.kind === 'edit' ? 'EDITEAZĂ MISIUNEA' : 'MISIUNE NOUĂ'}
         onClose={() => setDialog(null)}
       >
         {(dialog?.kind === 'create' || dialog?.kind === 'edit') && (
@@ -146,6 +182,7 @@ export function QuestLog() {
             onSubmit={async (values) => {
               if (dialog.kind === 'edit') await api.tasks.update(dialog.task.id, values);
               else await api.tasks.create(values as Parameters<typeof api.tasks.create>[0]);
+              fx.sfx('click');
               setDialog(null);
               await refresh();
             }}
@@ -153,17 +190,17 @@ export function QuestLog() {
         )}
       </Modal>
 
-      <Modal open={dialog?.kind === 'delete'} title="Ștergi activitatea?" onClose={() => setDialog(null)}>
+      <Modal open={dialog?.kind === 'delete'} title="ȘTERGI MISIUNEA?" onClose={() => setDialog(null)}>
         {dialog?.kind === 'delete' && (
           <>
-            <p className="text-slate-700 dark:text-slate-300">
+            <p className="text-ink">
               „{dialog.task.title}” se șterge definitiv. XP-ul deja primit rămâne, iar în Istoric se păstrează doar titlul.
             </p>
             <div className="mt-6 flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setDialog(null)}>
                 Renunță
               </Button>
-              <Button className="bg-red-600 hover:bg-red-700" loading={remove.isPending} onClick={() => remove.mutate(dialog.task)}>
+              <Button variant="danger" loading={remove.isPending} onClick={() => remove.mutate(dialog.task)}>
                 Șterge
               </Button>
             </div>
@@ -173,7 +210,7 @@ export function QuestLog() {
 
       {undo?.undoAvailableUntil && (
         <UndoToast
-          message={`„${undo.title}” e gata!`}
+          message={`„${undo.title}” îndeplinită!`}
           until={undo.undoAvailableUntil}
           onExpire={() => setUndo(null)}
           onUndo={() => {
@@ -186,14 +223,14 @@ export function QuestLog() {
   );
 }
 
-function TaskGroup({ title, count, hint, children }: { title: string; count: number; hint?: string; children: React.ReactNode }) {
+function TaskGroup({ title, count, hint, tone, children }: { title: string; count: number; hint?: string; tone: string; children: ReactNode }) {
   return (
     <div>
-      <h3 className="font-semibold">
-        {title} <span className="font-normal text-slate-500">({count})</span>
+      <h3 className={`pixel text-xs ${tone}`}>
+        {title} <span className="text-muted">({count})</span>
       </h3>
-      {hint && <p className="text-sm text-slate-600 dark:text-slate-400">{hint}</p>}
-      <ul className="mt-2 space-y-3">{children}</ul>
+      {hint && <p className="mt-1 text-sm text-muted">{hint}</p>}
+      <ul className="mt-3 space-y-3">{children}</ul>
     </div>
   );
 }
