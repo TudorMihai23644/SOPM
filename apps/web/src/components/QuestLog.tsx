@@ -4,13 +4,14 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { api, ApiRequestError } from '../lib/api';
 import { useFx } from '../lib/fx';
 import { markSilentUpdate } from '../lib/player';
+import { activeTasksQuery } from '../lib/queries';
+import { emitScene } from '../scene/events';
 import { Button } from './Button';
 import { Modal } from './Modal';
 import { TaskCard } from './TaskCard';
 import { TaskForm } from './TaskForm';
 import { UndoToast } from './UndoToast';
 
-const ACTIVE: TaskStatus[] = ['UPCOMING', 'OVERDUE'];
 const CLOSED: TaskStatus[] = ['COMPLETED', 'CANCELLED'];
 
 type Dialog = { kind: 'create' } | { kind: 'edit'; task: TaskDto } | { kind: 'delete'; task: TaskDto } | null;
@@ -24,11 +25,7 @@ export function QuestLog() {
   const [error, setError] = useState<string | null>(null);
 
   // Lista activă se reîmprospătează la un minut, ca misiunile ratate să treacă singure în Restant.
-  const active = useQuery({
-    queryKey: ['tasks', 'active'],
-    queryFn: () => api.tasks.list({ status: ACTIVE, sort: 'deadline' }),
-    refetchInterval: 60_000,
-  });
+  const active = useQuery(activeTasksQuery);
   // Citirea listei poate trece misiuni în Restant (și scădea HP), deci profilul se reîncarcă după ea.
   useEffect(() => {
     if (active.dataUpdatedAt) void queryClient.invalidateQueries({ queryKey: ['me'] });
@@ -42,7 +39,8 @@ export function QuestLog() {
   const refresh = () =>
     queryClient.invalidateQueries({ predicate: (q) => ['tasks', 'history', 'me'].includes(String(q.queryKey[0])) });
 
-  function celebrate(reward: RewardDto) {
+  function celebrate(reward: RewardDto, task: TaskDto) {
+    emitScene({ type: 'attack', late: task.status === 'OVERDUE', taskId: task.id });
     if (reward.tooFast) {
       fx.float('Prea grăbit: fără răsplată', 'info');
       fx.sfx('denied');
@@ -53,21 +51,24 @@ export function QuestLog() {
     if (reward.hp > 0) fx.float(`+${reward.hp} viață`, 'hp');
     if (reward.multiplier > 1) fx.float(`🔥 Serie ×${reward.multiplier.toFixed(2)}`, 'combo');
     if (reward.staminaCapped) fx.float(reward.xp > 0 ? 'Stamina epuizată' : 'Stamina epuizată: fără experiență', 'info');
-    if (reward.levelsGained > 0) setTimeout(() => fx.levelUp(reward.level, reward.levelsGained * 25), 700);
+    if (reward.levelsGained > 0) {
+      emitScene({ type: 'cheer' });
+      setTimeout(() => fx.levelUp(reward.level, reward.levelsGained * 25), 1400);
+    }
     else fx.sfx(reward.xp > 0 ? 'coin' : 'denied');
   }
 
   const action = useMutation({
     mutationFn: ({ kind, task }: { kind: ActionKind; task: TaskDto }) => api.tasks[kind](task.id),
     onMutate: () => setError(null),
-    onSuccess: ({ task, user, reward }: TaskActionResponse, { kind }) => {
+    onSuccess: ({ task, user, reward }: TaskActionResponse, { kind, task: before }) => {
       if (kind === 'undo') {
         markSilentUpdate();
         fx.float('Anulat', 'info');
         fx.sfx('undo');
       }
       queryClient.setQueryData(['me'], user);
-      if (reward) celebrate(reward);
+      if (reward) celebrate(reward, before);
       setUndo(kind === 'complete' && task.undoAvailableUntil ? task : null);
     },
     onError: (err) => {

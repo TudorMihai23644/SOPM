@@ -13,7 +13,7 @@ const COLORS = {
 };
 
 /** Glob de viață sau de Stamina, ca în RPG-urile dark fantasy; umplerea arată proporția. */
-export function Orb({ label, value, max, kind }: OrbProps) {
+export function Orb({ label, value, max, kind, compact = false }: OrbProps & { compact?: boolean }) {
   const id = useId();
   const ratio = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0;
   const c = COLORS[kind];
@@ -23,7 +23,7 @@ export function Orb({ label, value, max, kind }: OrbProps) {
     <figure className="flex flex-col items-center gap-1">
       <svg
         viewBox="0 0 100 100"
-        className="h-24 w-24 drop-shadow-[0_4px_10px_rgb(0_0_0/0.8)] sm:h-28 sm:w-28"
+        className={`drop-shadow-[0_4px_10px_rgb(0_0_0/0.8)] ${compact ? 'h-16 w-16 sm:h-20 sm:w-20' : 'h-24 w-24 sm:h-28 sm:w-28'}`}
         role="progressbar"
         aria-label={label}
         aria-valuemin={0}
@@ -54,7 +54,7 @@ export function Orb({ label, value, max, kind }: OrbProps) {
           {value}
         </text>
       </svg>
-      <figcaption className={`font-display text-xs font-bold tracking-wider uppercase ${c.text}`}>
+      <figcaption className={`font-display text-xs font-bold tracking-wider uppercase [text-shadow:0_1px_3px_#000] ${c.text}`}>
         {label} <span className="text-muted">/ {max}</span>
       </figcaption>
     </figure>
