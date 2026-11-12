@@ -30,6 +30,13 @@ export interface MeDto {
   hp: number;
   hpMax: number;
   coins: number;
+  /** Zilele de serie (COMBO) încă valabile. */
+  streakDays: number;
+  /** Multiplicatorul de XP pentru următoarea finalizare la timp. */
+  comboMultiplier: number;
+  /** XP primit azi, din plafonul zilnic (Stamina). */
+  staminaUsed: number;
+  staminaMax: number;
   createdAt: string;
 }
 

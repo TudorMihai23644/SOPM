@@ -7,6 +7,7 @@ import type {
   MeDto,
   Page,
   RegisterInput,
+  TaskActionResponse,
   TaskDto,
   TaskStatus,
   UpdateTaskInput,
@@ -108,9 +109,9 @@ export const api = {
     create: (input: CreateTaskInput) => authed<TaskDto>('/tasks', { method: 'POST', body: JSON.stringify(input) }),
     update: (id: string, input: UpdateTaskInput) =>
       authed<TaskDto>(`/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
-    complete: (id: string) => authed<TaskDto>(`/tasks/${id}/complete`, { method: 'POST' }),
-    cancel: (id: string) => authed<TaskDto>(`/tasks/${id}/cancel`, { method: 'POST' }),
-    undo: (id: string) => authed<TaskDto>(`/tasks/${id}/undo`, { method: 'POST' }),
+    complete: (id: string) => authed<TaskActionResponse>(`/tasks/${id}/complete`, { method: 'POST' }),
+    cancel: (id: string) => authed<TaskActionResponse>(`/tasks/${id}/cancel`, { method: 'POST' }),
+    undo: (id: string) => authed<TaskActionResponse>(`/tasks/${id}/undo`, { method: 'POST' }),
     remove: (id: string) => authed<void>(`/tasks/${id}`, { method: 'DELETE' }),
   },
 

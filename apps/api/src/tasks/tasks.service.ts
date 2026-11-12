@@ -6,11 +6,15 @@ import {
   type CreateTaskData,
   type HistoryEvent,
   type Page,
+  type RewardDto,
+  type TaskActionResponse,
   type TaskDto,
   type UpdateTaskData,
 } from '@deadlinehero/shared';
 import { CLOCK, type Clock } from '../common/clock';
+import { GameService } from '../game/game.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../users/users.service';
 import { TaskErrors } from './errors';
 import { OverdueService } from './overdue.service';
 import { toTaskDto, undoDeadline } from './task.mapper';
@@ -25,6 +29,8 @@ export class TasksService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly overdue: OverdueService,
+    private readonly game: GameService,
+    private readonly users: UsersService,
     @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
@@ -92,8 +98,8 @@ export class TasksService {
   }
 
   /** Editare și amânare. Doar activitățile care urmează se pot modifica. */
-  update(userId: string, taskId: string, data: UpdateTaskData): Promise<TaskDto> {
-    return this.mutate(userId, taskId, async (tx, task, now) => {
+  async update(userId: string, taskId: string, data: UpdateTaskData): Promise<TaskDto> {
+    const { task } = await this.mutate(userId, taskId, async (tx, task, now) => {
       if (task.status !== 'UPCOMING') throw TaskErrors.notEditable();
 
       const changes: Prisma.TaskUpdateInput = { updatedAt: now };
@@ -116,38 +122,43 @@ export class TasksService {
 
       const updated = await tx.task.update({ where: { id: task.id }, data: changes });
       if (postponed) await this.log(tx, updated, 'POSTPONED', 'UPCOMING', 'UPCOMING', now);
-      return updated;
+      return { task: updated };
     });
+    return task;
   }
 
-  complete(userId: string, taskId: string): Promise<TaskDto> {
+  /** Finalizare: recompensa se calculează pe server, în aceeași tranzacție. */
+  complete(userId: string, taskId: string): Promise<TaskActionResponse> {
     return this.mutate(userId, taskId, async (tx, task, now) => {
       if (!ACTIVE.includes(task.status)) throw TaskErrors.notActive();
+      const attempt = task.completionAttempt + 1;
+      const reward = await this.game.rewardCompletion(tx, task, attempt, now);
       const updated = await tx.task.update({
         where: { id: task.id },
-        data: { status: 'COMPLETED', completedAt: now, completedFrom: task.status, updatedAt: now },
+        data: { status: 'COMPLETED', completedAt: now, completedFrom: task.status, completionAttempt: attempt, updatedAt: now },
       });
       const event: HistoryEvent = task.status === 'OVERDUE' ? 'COMPLETED_LATE' : 'COMPLETED';
-      await this.log(tx, updated, event, task.status, 'COMPLETED', now);
-      return updated;
+      await this.log(tx, updated, event, task.status, 'COMPLETED', now, reward.tooFast ? 'TOO_FAST' : null);
+      return { task: updated, reward };
     });
   }
 
-  cancel(userId: string, taskId: string): Promise<TaskDto> {
+  cancel(userId: string, taskId: string): Promise<TaskActionResponse> {
     return this.mutate(userId, taskId, async (tx, task, now) => {
       if (!ACTIVE.includes(task.status)) throw TaskErrors.notActive();
       const updated = await tx.task.update({ where: { id: task.id }, data: { status: 'CANCELLED', updatedAt: now } });
       await this.log(tx, updated, 'CANCELLED', task.status, 'CANCELLED', now);
-      return updated;
+      return { task: updated };
     });
   }
 
-  /** Undo: în 10 secunde de la finalizare, o singură dată per activitate. */
-  undo(userId: string, taskId: string): Promise<TaskDto> {
+  /** Undo: în 10 secunde de la finalizare, o singură dată; recompensa se retrage. */
+  undo(userId: string, taskId: string): Promise<TaskActionResponse> {
     return this.mutate(userId, taskId, async (tx, task, now) => {
       const until = undoDeadline(task);
       if (!until || now > until || !task.completedFrom) throw TaskErrors.undoNotAvailable();
 
+      await this.game.revokeCompletion(tx, task, task.completionAttempt);
       let restored = await tx.task.update({
         where: { id: task.id },
         data: { status: task.completedFrom, completedAt: null, completedFrom: null, undoUsed: true, updatedAt: now },
@@ -155,7 +166,7 @@ export class TasksService {
       await this.log(tx, restored, 'UNDONE', 'COMPLETED', task.completedFrom, now);
       // Dacă termenul a trecut între timp, activitatea revine direct ca restantă.
       restored = await this.applyOverdue(tx, restored, now);
-      return restored;
+      return { task: restored };
     });
   }
 
@@ -171,14 +182,18 @@ export class TasksService {
   private async mutate(
     userId: string,
     taskId: string,
-    change: (tx: Tx, task: Task, now: Date) => Promise<Task>,
-  ): Promise<TaskDto> {
+    change: (tx: Tx, task: Task, now: Date) => Promise<{ task: Task; reward?: RewardDto }>,
+  ): Promise<TaskActionResponse> {
     const now = this.clock.now();
-    const task = await this.prisma.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const locked = await this.lock(tx, userId, taskId);
-      return change(tx, await this.applyOverdue(tx, locked, now), now);
+      const result = await change(tx, await this.applyOverdue(tx, locked, now), now);
+      return {
+        task: toTaskDto(result.task, now),
+        user: await this.users.getMe(userId, tx),
+        ...(result.reward ? { reward: result.reward } : {}),
+      };
     });
-    return toTaskDto(task, now);
   }
 
   private async lock(tx: Tx, userId: string, taskId: string): Promise<Task> {
@@ -194,13 +209,22 @@ export class TasksService {
       where: { id: task.id },
       data: { status: 'OVERDUE', overdueAt: task.deadlineAt, updatedAt: now },
     });
-    await this.log(tx, updated, 'OVERDUE', 'UPCOMING', 'OVERDUE', task.deadlineAt);
-    return updated;
+    const ko = await this.game.applyOverduePenalty(tx, updated);
+    await this.log(tx, updated, 'OVERDUE', 'UPCOMING', 'OVERDUE', task.deadlineAt, ko ? 'KO' : null);
+    return tx.task.findUniqueOrThrow({ where: { id: task.id } });
   }
 
-  private log(tx: Tx, task: Task, event: HistoryEvent, from: TaskStatus | null, to: TaskStatus | null, at: Date) {
+  private log(
+    tx: Tx,
+    task: Task,
+    event: HistoryEvent,
+    from: TaskStatus | null,
+    to: TaskStatus | null,
+    at: Date,
+    note: string | null = null,
+  ) {
     return tx.historyLog.create({
-      data: { userId: task.ownerId, taskId: task.id, taskTitle: task.title, event, fromStatus: from, toStatus: to, at },
+      data: { userId: task.ownerId, taskId: task.id, taskTitle: task.title, event, fromStatus: from, toStatus: to, at, note },
     });
   }
 

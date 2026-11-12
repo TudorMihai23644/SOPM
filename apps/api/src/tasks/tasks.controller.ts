@@ -5,6 +5,7 @@ import {
   type CreateTaskData,
   type HistoryEntryDto,
   type Page,
+  type TaskActionResponse,
   type TaskDto,
   type UpdateTaskData,
 } from '@deadlinehero/shared';
@@ -56,19 +57,19 @@ export class TasksController {
 
   @Post(':id/complete')
   @HttpCode(HttpStatus.OK)
-  complete(@CurrentUserId() userId: string, @Param('id', TaskId()) id: string): Promise<TaskDto> {
+  complete(@CurrentUserId() userId: string, @Param('id', TaskId()) id: string): Promise<TaskActionResponse> {
     return this.tasks.complete(userId, id);
   }
 
   @Post(':id/cancel')
   @HttpCode(HttpStatus.OK)
-  cancel(@CurrentUserId() userId: string, @Param('id', TaskId()) id: string): Promise<TaskDto> {
+  cancel(@CurrentUserId() userId: string, @Param('id', TaskId()) id: string): Promise<TaskActionResponse> {
     return this.tasks.cancel(userId, id);
   }
 
   @Post(':id/undo')
   @HttpCode(HttpStatus.OK)
-  undo(@CurrentUserId() userId: string, @Param('id', TaskId()) id: string): Promise<TaskDto> {
+  undo(@CurrentUserId() userId: string, @Param('id', TaskId()) id: string): Promise<TaskActionResponse> {
     return this.tasks.undo(userId, id);
   }
 

@@ -35,7 +35,10 @@ export function QuestLog() {
   const action = useMutation({
     mutationFn: async ({ kind, task }: { kind: 'complete' | 'cancel' | 'undo'; task: TaskDto }) => api.tasks[kind](task.id),
     onMutate: () => setError(null),
-    onSuccess: (task, { kind }) => setUndo(kind === 'complete' && task.undoAvailableUntil ? task : null),
+    onSuccess: ({ task, user }, { kind }) => {
+      queryClient.setQueryData(['me'], user);
+      setUndo(kind === 'complete' && task.undoAvailableUntil ? task : null);
+    },
     onError: (err) => setError(err instanceof ApiRequestError ? err.message : 'Acțiunea nu a reușit.'),
     onSettled: refresh,
   });

@@ -158,8 +158,8 @@ describe('Activități (e2e)', () => {
       ctx.clock.advance(5 * MINUTE);
 
       const done = await ana.post(`/tasks/${task.id}/complete`).expect(200);
-      expect(done.body).toMatchObject({ status: 'COMPLETED', completedAt: ctx.clock.now().toISOString() });
-      expect(done.body.undoAvailableUntil).toBe(new Date(ctx.clock.now().getTime() + 10 * SECOND).toISOString());
+      expect(done.body.task).toMatchObject({ status: 'COMPLETED', completedAt: ctx.clock.now().toISOString() });
+      expect(done.body.task.undoAvailableUntil).toBe(new Date(ctx.clock.now().getTime() + 10 * SECOND).toISOString());
 
       const again = await ana.post(`/tasks/${task.id}/complete`).expect(409);
       expect(again.body.code).toBe('TASK_NOT_ACTIVE');
@@ -170,7 +170,7 @@ describe('Activități (e2e)', () => {
       const ana = await signUp(ctx.server);
       const { body: task } = await ana.post('/tasks', newTask()).expect(201);
       const res = await ana.post(`/tasks/${task.id}/cancel`).expect(200);
-      expect(res.body.status).toBe('CANCELLED');
+      expect(res.body.task.status).toBe('CANCELLED');
       await ana.post(`/tasks/${task.id}/complete`).expect(409);
       expect(await events(ana.id)).toEqual(['CREATED', 'CANCELLED']);
     });
@@ -182,7 +182,7 @@ describe('Activități (e2e)', () => {
       await ana.post(`/tasks/${task.id}/complete`).expect(200);
       ctx.clock.advance(9 * SECOND);
       const undone = await ana.post(`/tasks/${task.id}/undo`).expect(200);
-      expect(undone.body).toMatchObject({ status: 'UPCOMING', completedAt: null });
+      expect(undone.body.task).toMatchObject({ status: 'UPCOMING', completedAt: null });
 
       await ana.post(`/tasks/${task.id}/complete`).expect(200);
       const second = await ana.post(`/tasks/${task.id}/undo`).expect(409);
@@ -291,7 +291,7 @@ describe('Activități (e2e)', () => {
 
       await ana.patch(`/tasks/${late.id}`, { deadlineAt: inHours(5) }).expect(409);
       const done = await ana.post(`/tasks/${late.id}/complete`).expect(200);
-      expect(done.body.status).toBe('COMPLETED');
+      expect(done.body.task.status).toBe('COMPLETED');
       await ana.post(`/tasks/${other.id}/cancel`).expect(200);
 
       const history = await ana.get(`/history?taskId=${late.id}`).expect(200);
@@ -304,7 +304,7 @@ describe('Activități (e2e)', () => {
       ctx.clock.advance(2 * HOUR);
       await ana.post(`/tasks/${task.id}/complete`).expect(200);
       const res = await ana.post(`/tasks/${task.id}/undo`).expect(200);
-      expect(res.body.status).toBe('OVERDUE');
+      expect(res.body.task.status).toBe('OVERDUE');
     });
   });
 });

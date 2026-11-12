@@ -30,17 +30,21 @@ enum LedgerKind {
 }
 
 model User {
-  id           String   @id @default(uuid()) @db.Uuid
-  email        String   @unique
-  passwordHash String   @map("password_hash")
-  nickname     String   @unique
-  timezone     String   @default("Europe/Bucharest")
-  xpTotal      Int      @default(0) @map("xp_total")
-  level        Int      @default(1)
-  hp           Int      @default(100)
-  coins        Int      @default(0)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid()) @db.Uuid
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  nickname      String   @unique
+  timezone      String   @default("Europe/Bucharest")
+  xpTotal       Int      @default(0) @map("xp_total")
+  level         Int      @default(1)
+  hp            Int      @default(100)
+  coins         Int      @default(0)
+  /// Zilele consecutive cu cel puțin o finalizare la timp (COMBO).
+  streakDays    Int      @default(0) @map("streak_days")
+  /// Ultima zi de joc (AAAA-LL-ZZ) numărată în serie.
+  lastStreakDay String?  @map("last_streak_day") @db.VarChar(10)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   tasks         Task[]
   history       HistoryLog[]
@@ -52,23 +56,25 @@ model User {
 }
 
 model Task {
-  id               String      @id @default(uuid()) @db.Uuid
-  ownerId          String      @map("owner_id") @db.Uuid
-  title            String      @db.VarChar(120)
-  description      String?
-  deadlineAt       DateTime    @map("deadline_at")
-  difficulty       Difficulty
-  status           TaskStatus  @default(UPCOMING)
-  createdAt        DateTime    @default(now()) @map("created_at")
-  completedAt      DateTime?   @map("completed_at")
-  overdueAt        DateTime?   @map("overdue_at")
-  updatedAt        DateTime    @default(now()) @updatedAt @map("updated_at")
-  postponeCount    Int         @default(0) @map("postpone_count")
-  hpPenaltyApplied Boolean     @default(false) @map("hp_penalty_applied")
+  id                String      @id @default(uuid()) @db.Uuid
+  ownerId           String      @map("owner_id") @db.Uuid
+  title             String      @db.VarChar(120)
+  description       String?
+  deadlineAt        DateTime    @map("deadline_at")
+  difficulty        Difficulty
+  status            TaskStatus  @default(UPCOMING)
+  createdAt         DateTime    @default(now()) @map("created_at")
+  completedAt       DateTime?   @map("completed_at")
+  overdueAt         DateTime?   @map("overdue_at")
+  updatedAt         DateTime    @default(now()) @updatedAt @map("updated_at")
+  postponeCount     Int         @default(0) @map("postpone_count")
+  hpPenaltyApplied  Boolean     @default(false) @map("hp_penalty_applied")
   /// Starea dinaintea finalizării, la care revine Undo.
-  completedFrom    TaskStatus? @map("completed_from")
+  completedFrom     TaskStatus? @map("completed_from")
   /// Undo se poate folosi o singură dată per activitate.
-  undoUsed         Boolean     @default(false) @map("undo_used")
+  undoUsed          Boolean     @default(false) @map("undo_used")
+  /// Numărul finalizării; intră în cheia recompensei, ca o refinalizare după Undo să fie distinctă.
+  completionAttempt Int         @default(0) @map("completion_attempt")
 
   owner   User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   history HistoryLog[]
@@ -88,6 +94,7 @@ model HistoryLog {
   event      String
   fromStatus TaskStatus? @map("from_status")
   toStatus   TaskStatus? @map("to_status")
+  note       String?
   at         DateTime    @default(now())
 
   user User  @relation(fields: [userId], references: [id], onDelete: Cascade)

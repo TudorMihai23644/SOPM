@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from './config/config.module';
+import { GameModule } from './game/game.module';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { TasksModule } from './tasks/tasks.module';
@@ -16,6 +17,7 @@ const scheduler = process.env.NODE_ENV === 'test' ? [] : [ScheduleModule.forRoot
   imports: [
     ConfigModule,
     PrismaModule,
+    GameModule,
     ...scheduler,
     // 100 de cereri pe minut per IP, conform specificațiilor (în teste limita e ridicată).
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: process.env.NODE_ENV === 'test' ? 10_000 : 100 }]),

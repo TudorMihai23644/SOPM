@@ -34,6 +34,7 @@ export function toHistoryDto(entry: HistoryLog): HistoryEntryDto {
     event: entry.event as HistoryEvent,
     fromStatus: entry.fromStatus,
     toStatus: entry.toStatus,
+    note: entry.note,
     at: entry.at.toISOString(),
   };
 }

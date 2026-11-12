@@ -28,6 +28,8 @@ export interface GameConfig {
   hpAfterKo: number;
   koCoinPenaltyRatio: number;
   levelUpCoins: number;
+  comboStepPerDay: number;
+  comboMaxMultiplier: number;
   undoWindowSeconds: number;
   gameDayStartHour: number;
   reviewTimeoutHours: number;
@@ -54,6 +56,8 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
   hpAfterKo: 50,
   koCoinPenaltyRatio: 0.2,
   levelUpCoins: 25,
+  comboStepPerDay: 0.05,
+  comboMaxMultiplier: 1.5,
   undoWindowSeconds: 10,
   gameDayStartHour: 4,
   reviewTimeoutHours: 48,

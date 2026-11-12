@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { DIFFICULTIES, type Difficulty } from './config';
-import type { TaskStatus } from './types';
+import type { MeDto, TaskStatus } from './types';
 
 export const taskTitleSchema = z
   .string({ error: 'Titlul este obligatoriu' })
@@ -82,6 +82,25 @@ export interface TaskDto {
   undoAvailableUntil: string | null;
 }
 
+/** Ce a primit (sau pierdut) jucătorul la o acțiune, pentru efectele din interfață. */
+export interface RewardDto {
+  xp: number;
+  coins: number;
+  hp: number;
+  multiplier: number;
+  levelsGained: number;
+  level: number;
+  tooFast: boolean;
+  staminaCapped: boolean;
+}
+
+export interface TaskActionResponse {
+  task: TaskDto;
+  user: MeDto;
+  /** Lipsește la acțiunile care nu schimbă recompense. */
+  reward?: RewardDto;
+}
+
 export interface Page<T> {
   items: T[];
   nextCursor: string | null;
@@ -94,5 +113,6 @@ export interface HistoryEntryDto {
   event: HistoryEvent;
   fromStatus: TaskStatus | null;
   toStatus: TaskStatus | null;
+  note: string | null;
   at: string;
 }
