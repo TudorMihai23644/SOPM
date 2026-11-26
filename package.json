@@ -34,6 +34,7 @@
   },
   "overrides": {
     "deepmerge-ts": "^8.0.0",
+    "effect": "^3.22.5",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
