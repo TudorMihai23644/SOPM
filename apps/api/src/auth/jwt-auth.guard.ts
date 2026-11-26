@@ -18,12 +18,14 @@ export class JwtAuthGuard implements CanActivate {
     if (scheme !== 'Bearer' || !token) {
       throw new AppError(HttpStatus.UNAUTHORIZED, 'UNAUTHORIZED', 'Autentificare necesară');
     }
+    let userId: string;
     try {
-      const payload = await this.tokens.verifyAccessToken(token);
-      request.userId = payload.sub;
-      return true;
+      userId = (await this.tokens.verifyAccessToken(token)).sub;
     } catch {
       throw new AppError(HttpStatus.UNAUTHORIZED, 'TOKEN_EXPIRED', 'Sesiunea a expirat');
     }
+    // Contul poate fi fost șters între timp; tokenul lui nu mai deschide nimic.
+    request.userId = await this.tokens.assertUserExists(userId);
+    return true;
   }
 }

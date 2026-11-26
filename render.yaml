@@ -1,0 +1,28 @@
+# Render Blueprint: un serviciu web (API + aplicația web) și o bază de date PostgreSQL.
+# Pe render.com: New → Blueprint → alegeți acest repository. Detalii în docs/deploy.md.
+services:
+  - type: web
+    name: deadlinehero
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: main
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: deadlinehero-db
+          property: connectionString
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+      # CORS_ORIGIN și APP_URL iau automat adresa serviciului (RENDER_EXTERNAL_URL).
+      # Setați-le aici doar pentru un domeniu propriu.
+
+databases:
+  - name: deadlinehero-db
+    plan: free
+    region: frankfurt
+    databaseName: deadlinehero
+    postgresMajorVersion: "16"

@@ -18,12 +18,12 @@ export default tseslint.config(
     languageOptions: { globals: { ...globals.node, ...globals.jest } },
   },
   {
-    files: ['**/*.cjs', '**/jest.config.js'],
+    files: ['**/*.cjs', '**/jest.config.js', 'apps/mobile/{metro,babel}.config.js'],
     languageOptions: { sourceType: 'commonjs', globals: globals.node },
     rules: { '@typescript-eslint/no-require-imports': 'off' },
   },
   {
-    files: ['apps/web/**/*.{ts,tsx}'],
+    files: ['apps/web/**/*.{ts,tsx}', 'apps/mobile/**/*.{ts,tsx}'],
     languageOptions: { globals: globals.browser },
     plugins: { 'react-hooks': reactHooks },
     rules: reactHooks.configs.recommended.rules,

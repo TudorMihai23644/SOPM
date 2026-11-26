@@ -9,7 +9,18 @@ export function configureApp(app: NestExpressApplication): void {
   const env = app.get<Env>(ENV);
   app.set('trust proxy', 1);
   app.setGlobalPrefix('api/v1');
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          // Scena 3D: modelele .glb au texturi PNG incluse, pe care Three.js le încarcă prin URL-uri blob:.
+          'img-src': ["'self'", 'data:', 'blob:'],
+          'connect-src': ["'self'", 'blob:', 'data:'],
+          'worker-src': ["'self'", 'blob:'],
+        },
+      },
+    }),
+  );
   app.use(cookieParser());
   app.enableCors({
     origin: env.CORS_ORIGIN.split(',').map((origin) => origin.trim()),

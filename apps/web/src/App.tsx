@@ -5,7 +5,10 @@ import { useAuth } from './lib/auth';
 import { HistoryPage } from './pages/HistoryPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
+import { ForgotPasswordPage, ResetPasswordPage } from './pages/PasswordResetPages';
+import { ProfilePage } from './pages/ProfilePage';
 import { RegisterPage } from './pages/RegisterPage';
+import { TeamPage } from './pages/TeamPage';
 
 function Loading() {
   return (
@@ -34,6 +37,10 @@ export function App() {
     <Routes>
       <Route path="/" element={<Protected>{(user) => <HomePage initialUser={user} />}</Protected>} />
       <Route path="/istoric" element={<Protected>{() => <HistoryPage />}</Protected>} />
+      <Route path="/echipa" element={<Protected>{(user) => <TeamPage initialUser={user} />}</Protected>} />
+      <Route path="/profil" element={<Protected>{(user) => <ProfilePage initialUser={user} />}</Protected>} />
+      <Route path="/parola-uitata" element={<GuestOnly><ForgotPasswordPage /></GuestOnly>} />
+      <Route path="/resetare-parola" element={<ResetPasswordPage />} />
       <Route path="/autentificare" element={<GuestOnly><LoginPage /></GuestOnly>} />
       <Route path="/inregistrare" element={<GuestOnly><RegisterPage /></GuestOnly>} />
       <Route path="*" element={<Navigate to="/" replace />} />

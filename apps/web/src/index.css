@@ -150,3 +150,43 @@ html[data-calm="true"] *::after {
     transition-duration: 0ms !important;
   }
 }
+
+/*
+ * Tema deschisă (pergament): aceleași roluri de culoare, valori cu contrast WCAG AA
+ * pe fundal deschis. Scena 3D rămâne pe fundalul ei întunecat.
+ */
+html[data-theme="light"] {
+  color-scheme: light;
+  --color-abyss: #f4ecdb;
+  --color-panel: #fbf6ea;
+  --color-panel-2: #efe3c9;
+  --color-line: #bfa173;
+  --color-ink: #2a1c0f;
+  --color-muted: #66543f;
+  --color-gold: #855600;
+  --color-ember: #a3470a;
+  --color-blood: #b0202a;
+  --color-heal: #2d6f1d;
+  --color-mana: #1d5ba3;
+  --color-arcane: #64469f;
+}
+html[data-theme="light"] body {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgb(200 140 60 / 0.18), transparent 70%),
+    repeating-linear-gradient(45deg, rgb(0 0 0 / 0.015) 0 2px, transparent 2px 6px);
+}
+html[data-theme="light"] .panel {
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.6),
+    0 6px 18px rgb(90 60 20 / 0.15);
+}
+html[data-theme="light"] .btn-primary {
+  color: #1d1307;
+}
+html[data-theme="light"] .glow-gold,
+html[data-theme="light"] .glow-ember,
+html[data-theme="light"] .glow-blood,
+html[data-theme="light"] .glow-heal,
+html[data-theme="light"] .glow-mana {
+  text-shadow: none;
+}

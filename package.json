@@ -6,7 +6,8 @@
   "workspaces": [
     "packages/shared",
     "apps/api",
-    "apps/web"
+    "apps/web",
+    "apps/mobile"
   ],
   "engines": {
     "node": ">=20"
@@ -19,7 +20,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "db:migrate": "npm run prisma:migrate -w @deadlinehero/api",
-    "db:seed": "npm run prisma:seed -w @deadlinehero/api"
+    "db:seed": "npm run prisma:seed -w @deadlinehero/api",
+    "dev:mobile": "npm run start -w @deadlinehero/mobile"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
@@ -31,6 +33,16 @@
     "typescript-eslint": "^8.72.2"
   },
   "overrides": {
-    "deepmerge-ts": "^8.0.0"
+    "deepmerge-ts": "^8.0.0",
+    "effect": "^3.22.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "argon2@0.44.0": true,
+    "esbuild@0.28.2": true,
+    "prisma@6.19.3": true
   }
 }

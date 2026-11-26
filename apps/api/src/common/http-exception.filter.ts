@@ -12,6 +12,16 @@ const DEFAULT_CODES: Partial<Record<number, string>> = {
   [HttpStatus.TOO_MANY_REQUESTS]: 'TOO_MANY_REQUESTS',
 };
 
+function bodyParserError(exception: unknown): { status: number; body: ApiError } | null {
+  if (typeof exception !== 'object' || exception === null) return null;
+  const { status, type } = exception as { status?: unknown; type?: unknown };
+  if (typeof status !== 'number' || status < 400 || status >= 500 || typeof type !== 'string') return null;
+  if (status === HttpStatus.PAYLOAD_TOO_LARGE) {
+    return { status, body: { code: 'PAYLOAD_TOO_LARGE', message: 'Cererea este prea mare.' } };
+  }
+  return { status, body: { code: DEFAULT_CODES[status] ?? 'BAD_REQUEST', message: 'Cererea nu este validă.' } };
+}
+
 /** Aduce toate erorile la forma { code, message } din specificații. */
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -39,6 +49,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
         code: DEFAULT_CODES[status] ?? 'ERROR',
         message: Array.isArray(message) ? message.join('; ') : (message ?? exception.message),
       } satisfies ApiError);
+      return;
+    }
+
+    // Erorile parserului de corp (Express): corp prea mare, JSON invalid etc. Sunt greșeli ale
+    // clientului, deci primesc statusul lor (4xx), fără detalii interne.
+    const clientError = bodyParserError(exception);
+    if (clientError) {
+      response.status(clientError.status).json(clientError.body);
       return;
     }
 

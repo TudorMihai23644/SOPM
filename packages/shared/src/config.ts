@@ -1,6 +1,6 @@
 /**
- * Valorile inițiale ale jocului. Serverul le copiază în tabela app_config,
- * de unde pot fi ajustate după playtest fără modificări de cod.
+ * Valorile jocului, folosite de server, web și mobil. `npm run db:seed` le copiază în
+ * tabela app_config, dar serverul le citește de aici; o ajustare cere o republicare.
  */
 export const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
@@ -33,6 +33,11 @@ export interface GameConfig {
   undoWindowSeconds: number;
   gameDayStartHour: number;
   reviewTimeoutHours: number;
+  /** Bonusul de grup: fracțiunea din XP-ul de bază primită de fiecare participant. */
+  groupBonusXpRatio: number;
+  groupBonusesPerTeamPerDay: number;
+  validatorRewardXp: number;
+  validatorRewardsPerDay: number;
 }
 
 export const DEFAULT_GAME_CONFIG: GameConfig = {
@@ -61,4 +66,8 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
   undoWindowSeconds: 10,
   gameDayStartHour: 4,
   reviewTimeoutHours: 48,
+  groupBonusXpRatio: 0.5,
+  groupBonusesPerTeamPerDay: 3,
+  validatorRewardXp: 5,
+  validatorRewardsPerDay: 3,
 };

@@ -54,6 +54,11 @@ export function LoginPage() {
           error={errors.password}
           onChange={(e) => setValues({ ...values, password: e.target.value })}
         />
+        <p className="-mt-1 text-right text-sm">
+          <Link to="/parola-uitata" className="text-muted hover:text-gold hover:underline">
+            Ai uitat parola?
+          </Link>
+        </p>
         <Button type="submit" className="w-full" loading={submitting}>
           Intră în joc
         </Button>

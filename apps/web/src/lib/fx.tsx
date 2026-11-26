@@ -12,9 +12,13 @@ interface FloatingText {
 
 type Overlay = { kind: 'levelUp'; level: number; coins: number } | { kind: 'ko'; coinsLost: number } | null;
 
+export type Theme = 'dark' | 'light';
+
 interface Settings {
   sound: boolean;
   calm: boolean;
+  /** Tema Light/Dark, gratuită din versiunea 1 (accesibilitate). */
+  theme: Theme;
 }
 
 interface FxContextValue {
@@ -34,12 +38,18 @@ const FxContext = createContext<FxContextValue | null>(null);
 const STORAGE_KEY = 'deadlinehero.settings';
 
 function loadSettings(): Settings {
-  const reduceMotion = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const media = (query: string) => typeof window !== 'undefined' && Boolean(window.matchMedia?.(query).matches);
+  const reduceMotion = media('(prefers-reduced-motion: reduce)');
+  const systemTheme: Theme = media('(prefers-color-scheme: light)') ? 'light' : 'dark';
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<Settings>;
-    return { sound: saved.sound ?? true, calm: saved.calm ?? Boolean(reduceMotion) };
+    return {
+      sound: saved.sound ?? true,
+      calm: saved.calm ?? reduceMotion,
+      theme: saved.theme === 'light' || saved.theme === 'dark' ? saved.theme : systemTheme,
+    };
   } catch {
-    return { sound: true, calm: Boolean(reduceMotion) };
+    return { sound: true, calm: reduceMotion, theme: systemTheme };
   }
 }
 
@@ -61,6 +71,7 @@ export function FxProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.dataset.calm = String(settings.calm);
+    document.documentElement.dataset.theme = settings.theme;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     } catch {

@@ -15,7 +15,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 const config = DEFAULT_GAME_CONFIG;
 
-export function toMeDto(user: User, now: Date, staminaUsed: number): MeDto {
+export function toMeDto(user: User, now: Date, staminaUsed: number, teamId: string | null = null): MeDto {
   const progress = levelProgress(user.xpTotal);
   const today = gameDayOf(now, user.timezone, config.gameDayStartHour);
   const streakDays = currentStreak(user.streakDays, user.lastStreakDay, today);
@@ -37,6 +37,7 @@ export function toMeDto(user: User, now: Date, staminaUsed: number): MeDto {
     comboMultiplier: comboMultiplier(nextStreakDays),
     staminaUsed,
     staminaMax: config.staminaDailyXp,
+    teamId,
     createdAt: user.createdAt.toISOString(),
   };
 }
@@ -49,13 +50,13 @@ export class UsersService {
   ) {}
 
   async getMe(userId: string, client: PrismaService | Prisma.TransactionClient = this.prisma): Promise<MeDto> {
-    const user = await client.user.findUnique({ where: { id: userId } });
+    const user = await client.user.findUnique({ where: { id: userId }, include: { membership: { select: { teamId: true } } } });
     if (!user) throw new AppError(HttpStatus.UNAUTHORIZED, 'INVALID_SESSION', 'Contul nu mai există');
     const now = this.clock.now();
     const today = gameDayOf(now, user.timezone, config.gameDayStartHour);
     const stamina = await client.dailyStamina.findUnique({
       where: { userId_gameDay: { userId, gameDay: new Date(`${today}T00:00:00Z`) } },
     });
-    return toMeDto(user, now, stamina?.xpAwarded ?? 0);
+    return toMeDto(user, now, stamina?.xpAwarded ?? 0, user.membership?.teamId ?? null);
   }
 }

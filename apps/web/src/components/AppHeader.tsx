@@ -20,8 +20,14 @@ function Nav() {
       <NavLink to="/" end className={linkClass}>
         Misiuni
       </NavLink>
+      <NavLink to="/echipa" className={linkClass}>
+        Echipă
+      </NavLink>
       <NavLink to="/istoric" className={linkClass}>
         Cronică
+      </NavLink>
+      <NavLink to="/profil" className={linkClass}>
+        Profil
       </NavLink>
     </>
   );
@@ -49,6 +55,15 @@ export function AppHeader() {
             onClick={() => setSettings({ sound: !settings.sound })}
           >
             {settings.sound ? '♪' : '♪̸'}
+          </button>
+          <button
+            type="button"
+            className={toggleClass(false)}
+            aria-label={settings.theme === 'dark' ? 'Temă deschisă' : 'Temă întunecată'}
+            title={settings.theme === 'dark' ? 'Temă deschisă' : 'Temă întunecată'}
+            onClick={() => setSettings({ theme: settings.theme === 'dark' ? 'light' : 'dark' })}
+          >
+            {settings.theme === 'dark' ? '☀' : '☾'}
           </button>
           <button
             type="button"

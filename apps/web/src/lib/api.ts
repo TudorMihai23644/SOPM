@@ -1,7 +1,15 @@
 import type {
   ApiError,
   AuthResponse,
+  ChangePasswordInput,
+  CreateQuestInput,
   CreateTaskInput,
+  ForgotPasswordInput,
+  MyTeamResponse,
+  QuestDto,
+  ResetPasswordInput,
+  TeamDto,
+  UpdateProfileInput,
   HistoryEntryDto,
   LoginInput,
   MeDto,
@@ -33,6 +41,11 @@ export function setAccessToken(token: string | null): void {
   accessToken = token;
 }
 
+/** Tokenul curent, pentru conexiunea WebSocket a echipei. */
+export function getAccessToken(): string | null {
+  return accessToken;
+}
+
 async function send<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   if (init.body) headers.set('Content-Type', 'application/json');
@@ -62,7 +75,8 @@ async function authed<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     return await send<T>(path, init);
   } catch (error) {
-    if (!(error instanceof ApiRequestError) || error.status !== 401) throw error;
+    // O parolă greșită (la schimbare sau ștergere) nu înseamnă o sesiune expirată.
+    if (!(error instanceof ApiRequestError) || error.status !== 401 || error.body.code === 'WRONG_PASSWORD') throw error;
     await refreshSession();
     return send<T>(path, init);
   }
@@ -100,6 +114,40 @@ export const api = {
   },
   refresh: refreshSession,
   me: () => authed<MeDto>('/me'),
+  updateProfile: (input: UpdateProfileInput) => authed<MeDto>('/me', { method: 'PATCH', body: JSON.stringify(input) }),
+  changePassword: (input: ChangePasswordInput) =>
+    authed<AuthResponse>('/auth/change-password', { method: 'POST', body: JSON.stringify(input) }).then(startSession),
+  forgotPassword: (input: ForgotPasswordInput) =>
+    send<void>('/auth/forgot-password', { method: 'POST', body: JSON.stringify(input) }),
+  resetPassword: (input: ResetPasswordInput) =>
+    send<void>('/auth/reset-password', { method: 'POST', body: JSON.stringify(input) }),
+  exportData: () => authed<Record<string, unknown>>('/me/export'),
+  deleteAccount: async (password: string) => {
+    await authed<void>('/me', { method: 'DELETE', body: JSON.stringify({ password }) });
+    setAccessToken(null);
+  },
+
+  teams: {
+    mine: () => authed<MyTeamResponse>('/teams/me'),
+    create: (name: string) => authed<TeamDto>('/teams', { method: 'POST', body: JSON.stringify({ name }) }),
+    join: (code: string) => authed<TeamDto>('/teams/join', { method: 'POST', body: JSON.stringify({ code }) }),
+    leave: () => authed<void>('/teams/me/leave', { method: 'POST' }),
+    kick: (userId: string) => authed<TeamDto>(`/teams/me/members/${userId}`, { method: 'DELETE' }),
+    regenerateCode: () => authed<TeamDto>('/teams/me/regenerate-code', { method: 'POST' }),
+  },
+
+  quests: {
+    list: () => authed<QuestDto[]>('/quests'),
+    create: (input: CreateQuestInput) => authed<QuestDto>('/quests', { method: 'POST', body: JSON.stringify(input) }),
+    done: (id: string) => authed<QuestDto>(`/quests/${id}/done`, { method: 'POST' }),
+    cancel: (id: string) => authed<QuestDto>(`/quests/${id}/cancel`, { method: 'POST' }),
+    validate: (id: string, userId: string) =>
+      authed<QuestDto>(`/quests/${id}/participants/${userId}/validate`, { method: 'POST' }),
+    reject: (id: string, userId: string, reason: string) =>
+      authed<QuestDto>(`/quests/${id}/participants/${userId}/reject`, { method: 'POST', body: JSON.stringify({ reason }) }),
+    excuse: (id: string, userId: string) =>
+      authed<QuestDto>(`/quests/${id}/participants/${userId}/excuse`, { method: 'POST' }),
+  },
 
   tasks: {
     list: (params: { status: TaskStatus[]; sort: 'deadline' | 'recent'; limit?: number }) => {
