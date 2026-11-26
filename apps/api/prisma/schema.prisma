@@ -30,27 +30,34 @@ enum LedgerKind {
 }
 
 model User {
-  id            String   @id @default(uuid()) @db.Uuid
-  email         String   @unique
-  passwordHash  String   @map("password_hash")
-  nickname      String   @unique
-  timezone      String   @default("Europe/Bucharest")
-  xpTotal       Int      @default(0) @map("xp_total")
-  level         Int      @default(1)
-  hp            Int      @default(100)
-  coins         Int      @default(0)
+  id              String   @id @default(uuid()) @db.Uuid
+  email           String   @unique
+  passwordHash    String   @map("password_hash")
+  nickname        String   @unique
+  timezone        String   @default("Europe/Bucharest")
+  xpTotal         Int      @default(0) @map("xp_total")
+  level           Int      @default(1)
+  hp              Int      @default(100)
+  coins           Int      @default(0)
   /// Zilele consecutive cu cel puțin o finalizare la timp (COMBO).
-  streakDays    Int      @default(0) @map("streak_days")
+  streakDays      Int      @default(0) @map("streak_days")
   /// Ultima zi de joc (AAAA-LL-ZZ) numărată în serie.
-  lastStreakDay String?  @map("last_streak_day") @db.VarChar(10)
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  lastStreakDay   String?  @map("last_streak_day") @db.VarChar(10)
+  /// Ultima zi de joc deschisă de job-ul daily-rollover (AAAA-LL-ZZ).
+  lastRolloverDay String?  @map("last_rollover_day") @db.VarChar(10)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   tasks         Task[]
   history       HistoryLog[]
   ledger        RewardLedger[]
   stamina       DailyStamina[]
   refreshTokens RefreshToken[]
+  resetTokens   PasswordResetToken[]
+  membership    TeamMember?
+  questsCreated Quest[]              @relation("QuestCreator")
+  participation QuestParticipant[]   @relation("QuestParticipant")
+  validations   QuestParticipant[]   @relation("QuestValidator")
 
   @@map("users")
 }
@@ -153,4 +160,115 @@ model AppConfig {
   value Json
 
   @@map("app_config")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+enum TeamRole {
+  LEADER
+  MEMBER
+}
+
+enum QuestStatus {
+  OPEN
+  COMPLETED
+  CANCELLED
+}
+
+enum ParticipantStatus {
+  PENDING
+  OVERDUE
+  AWAITING_REVIEW
+  VALIDATED
+  EXCUSED
+}
+
+/// Echipa (Guild): 1–4 membri, cu seif comun și nivel propriu.
+model Team {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String   @db.VarChar(30)
+  inviteCode String   @unique @map("invite_code") @db.VarChar(6)
+  leaderId   String   @map("leader_id") @db.Uuid
+  level      Int      @default(1)
+  teamXp     Int      @default(0) @map("team_xp")
+  vaultCoins Int      @default(0) @map("vault_coins")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  members TeamMember[]
+  quests  Quest[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  teamId   String   @map("team_id") @db.Uuid
+  /// Unic: un utilizator face parte dintr-o singură echipă.
+  userId   String   @unique @map("user_id") @db.Uuid
+  role     TeamRole @default(MEMBER)
+  joinedAt DateTime @default(now()) @map("joined_at")
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, userId])
+  @@map("team_members")
+}
+
+/// Shared Quest: sarcină de grup, vizibilă doar membrilor echipei.
+model Quest {
+  id             String      @id @default(uuid()) @db.Uuid
+  teamId         String      @map("team_id") @db.Uuid
+  creatorId      String?     @map("creator_id") @db.Uuid
+  title          String      @db.VarChar(120)
+  description    String?
+  deadlineAt     DateTime    @map("deadline_at")
+  difficulty     Difficulty
+  status         QuestStatus @default(OPEN)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  completedAt    DateTime?   @map("completed_at")
+  bonusGrantedAt DateTime?   @map("bonus_granted_at")
+
+  team         Team               @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  creator      User?              @relation("QuestCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  participants QuestParticipant[]
+
+  @@index([teamId, status, deadlineAt])
+  @@index([status, deadlineAt])
+  @@map("quests")
+}
+
+model QuestParticipant {
+  questId          String            @map("quest_id") @db.Uuid
+  userId           String            @map("user_id") @db.Uuid
+  status           ParticipantStatus @default(PENDING)
+  doneAt           DateTime?         @map("done_at")
+  /// Completarea a venit după termen: 25% XP, fără bonus de grup.
+  doneLate         Boolean           @default(false) @map("done_late")
+  overdueAt        DateTime?         @map("overdue_at")
+  hpPenaltyApplied Boolean           @default(false) @map("hp_penalty_applied")
+  validatorId      String?           @map("validator_id") @db.Uuid
+  validatedAt      DateTime?         @map("validated_at")
+  rejectReason     String?           @map("reject_reason") @db.VarChar(200)
+  autoValidated    Boolean           @default(false) @map("auto_validated")
+
+  quest     Quest @relation(fields: [questId], references: [id], onDelete: Cascade)
+  user      User  @relation("QuestParticipant", fields: [userId], references: [id], onDelete: Cascade)
+  validator User? @relation("QuestValidator", fields: [validatorId], references: [id], onDelete: SetNull)
+
+  @@id([questId, userId])
+  @@index([userId, status])
+  @@index([status, doneAt])
+  @@map("quest_participants")
 }

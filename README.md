@@ -8,7 +8,8 @@ Aplicație web care transformă sarcinile personale într-un joc: finalizezi act
 | --- | --- |
 | `apps/api` | API REST (NestJS, Prisma, PostgreSQL), sub `/api/v1` |
 | `apps/web` | Interfața web (React, Vite, Tailwind, TanStack Query) |
-| `packages/shared` | Tipuri, validări și regulile jocului, folosite de API și de web |
+| `apps/mobile` | Aplicația mobilă (Expo / React Native, Expo Router) pentru Android și iOS |
+| `packages/shared` | Tipuri, validări și regulile jocului, folosite de API, web și mobil |
 
 ## Pornire locală
 
@@ -34,6 +35,18 @@ npm run dev:web
 ```
 
 Aplicația web rulează pe http://localhost:5173 și trimite cererile `/api` către API, pe portul 3000.
+
+### Aplicația mobilă
+
+Cu API-ul pornit, într-un al treilea terminal:
+
+```bash
+npm run dev:mobile
+```
+
+Scanează codul QR cu aplicația **Expo Go** (Android) sau cu camera (iOS). Telefonul și calculatorul trebuie să fie în aceeași rețea Wi-Fi: aplicația găsește singură API-ul pe IP-ul calculatorului, portul 3000. Dacă firewall-ul Windows blochează conexiunea, permite Node.js în rețelele private. Pentru un server anume, setează `EXPO_PUBLIC_API_URL` (de ex. `https://api.exemplu.ro/api/v1`).
+
+Pe mobil: swipe la dreapta pe o misiune o marchează Completă (cu vibrație), swipe la stânga arată Anulează și Șterge. Sesiunea se păstrează în Keychain / Keystore.
 
 ## Verificări
 

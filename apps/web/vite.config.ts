@@ -13,8 +13,11 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Permite deschiderea serverului de dezvoltare printr-un tunel public (Cloudflare quick tunnel).
+    allowedHosts: ['.trycloudflare.com'],
     proxy: {
       '/api': 'http://localhost:3000',
+      '/socket.io': { target: 'http://localhost:3000', ws: true },
     },
   },
 });

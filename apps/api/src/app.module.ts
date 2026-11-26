@@ -8,6 +8,7 @@ import { GameModule } from './game/game.module';
 import { HealthController } from './health/health.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { TasksModule } from './tasks/tasks.module';
+import { TeamsModule } from './teams/teams.module';
 import { MeModule } from './users/me.module';
 
 // În teste, job-urile periodice nu pornesc singure; testele le apelează direct, cu ceas simulat.
@@ -24,6 +25,7 @@ const scheduler = process.env.NODE_ENV === 'test' ? [] : [ScheduleModule.forRoot
     AuthModule,
     MeModule,
     TasksModule,
+    TeamsModule,
   ],
   controllers: [HealthController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],

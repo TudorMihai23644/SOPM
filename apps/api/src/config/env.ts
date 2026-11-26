@@ -12,6 +12,8 @@ const envSchema = z.object({
   ACCESS_TOKEN_TTL_SECONDS: z.coerce.number().int().positive().default(900),
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  /** Adresa aplicației web, pentru linkurile din emailuri (resetare parolă). */
+  APP_URL: z.string().default('http://localhost:5173'),
   COOKIE_SECURE: booleanFromString.optional(),
 });
 

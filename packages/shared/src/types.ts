@@ -37,12 +37,16 @@ export interface MeDto {
   /** XP primit azi, din plafonul zilnic (Stamina). */
   staminaUsed: number;
   staminaMax: number;
+  /** Echipa din care face parte, dacă există. */
+  teamId: string | null;
   createdAt: string;
 }
 
 export interface AuthResponse {
   accessToken: string;
   user: MeDto;
+  /** Doar pentru aplicația mobilă (antetul x-client: mobile); pe web stă în cookie HttpOnly. */
+  refreshToken?: string;
 }
 
 /** Forma tuturor erorilor întoarse de API. */

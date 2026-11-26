@@ -33,6 +33,11 @@ export interface GameConfig {
   undoWindowSeconds: number;
   gameDayStartHour: number;
   reviewTimeoutHours: number;
+  /** Bonusul de grup: fracțiunea din XP-ul de bază primită de fiecare participant. */
+  groupBonusXpRatio: number;
+  groupBonusesPerTeamPerDay: number;
+  validatorRewardXp: number;
+  validatorRewardsPerDay: number;
 }
 
 export const DEFAULT_GAME_CONFIG: GameConfig = {
@@ -61,4 +66,8 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
   undoWindowSeconds: 10,
   gameDayStartHour: 4,
   reviewTimeoutHours: 48,
+  groupBonusXpRatio: 0.5,
+  groupBonusesPerTeamPerDay: 3,
+  validatorRewardXp: 5,
+  validatorRewardsPerDay: 3,
 };

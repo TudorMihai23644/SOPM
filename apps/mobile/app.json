@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "DeadlineHero",
+    "slug": "deadlinehero",
+    "version": "0.1.0",
+    "scheme": "deadlinehero",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#0b0907",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.deadlinehero"
+    },
+    "android": {
+      "package": "app.deadlinehero",
+      "edgeToEdgeEnabled": true
+    },
+    "plugins": ["expo-router", "expo-secure-store", "@react-native-community/datetimepicker"],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

@@ -113,3 +113,31 @@ function isPreviousDay(day: string, today: string): boolean {
   const ms = Date.parse(`${today}T00:00:00Z`) - Date.parse(`${day}T00:00:00Z`);
   return ms === 24 * 60 * 60 * 1000;
 }
+
+/** Plafonează un câștig de XP la Stamina rămasă în ziua de joc. */
+export function capByStamina(xp: number, staminaUsed: number, config: GameConfig = DEFAULT_GAME_CONFIG): number {
+  return Math.max(0, Math.min(xp, config.staminaDailyXp - staminaUsed));
+}
+
+/**
+ * Bonusul de grup pentru un participant: +50% din XP-ul de bază, sub plafonul Stamina.
+ * Seiful echipei primește monedele de bază ale quest-ului, iar echipa XP-ul de bază.
+ */
+export function groupBonus(
+  difficulty: Difficulty,
+  staminaUsed: number,
+  config: GameConfig = DEFAULT_GAME_CONFIG,
+): { xp: number; vaultCoins: number; teamXp: number } {
+  const base = config.difficulty[difficulty];
+  return {
+    xp: capByStamina(Math.floor(base.xp * config.groupBonusXpRatio), staminaUsed, config),
+    vaultCoins: base.coins,
+    teamXp: base.xp,
+  };
+}
+
+/** Recompensa validatorului: +5 XP, de cel mult 3 ori pe zi, sub plafonul Stamina. */
+export function validatorReward(rewardsToday: number, staminaUsed: number, config: GameConfig = DEFAULT_GAME_CONFIG): number {
+  if (rewardsToday >= config.validatorRewardsPerDay) return 0;
+  return capByStamina(config.validatorRewardXp, staminaUsed, config);
+}
