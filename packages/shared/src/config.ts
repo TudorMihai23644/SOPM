@@ -1,6 +1,6 @@
 /**
- * Valorile inițiale ale jocului. Serverul le copiază în tabela app_config,
- * de unde pot fi ajustate după playtest fără modificări de cod.
+ * Valorile jocului, folosite de server, web și mobil. `npm run db:seed` le copiază în
+ * tabela app_config, dar serverul le citește de aici; o ajustare cere o republicare.
  */
 export const DIFFICULTIES = ['EASY', 'MEDIUM', 'HARD'] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
