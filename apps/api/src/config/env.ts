@@ -15,13 +15,21 @@ const envSchema = z.object({
   /** Adresa aplicației web, pentru linkurile din emailuri (resetare parolă). */
   APP_URL: z.string().default('http://localhost:5173'),
   COOKIE_SECURE: booleanFromString.optional(),
+  /** Folderul cu build-ul aplicației web, servit de API în producție (implicit apps/web/dist). */
+  WEB_DIST: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema> & { COOKIE_SECURE: boolean };
 
 /** Citește și validează variabilele de mediu; aplicația nu pornește dacă lipsește ceva. */
 export function loadEnv(source: NodeJS.ProcessEnv = process.env): Env {
-  const result = envSchema.safeParse(source);
+  // Pe Render, adresa publică a serviciului vine în RENDER_EXTERNAL_URL; dacă CORS_ORIGIN și
+  // APP_URL nu sunt setate explicit, se folosește ea (aplicația web e servită de pe aceeași adresă).
+  const publicUrl = source.RENDER_EXTERNAL_URL;
+  const withDefaults = publicUrl
+    ? { CORS_ORIGIN: publicUrl, APP_URL: publicUrl, ...source }
+    : source;
+  const result = envSchema.safeParse(withDefaults);
   if (!result.success) {
     const problems = result.error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`);
     throw new Error(`Configurație invalidă:\n${problems.join('\n')}`);
