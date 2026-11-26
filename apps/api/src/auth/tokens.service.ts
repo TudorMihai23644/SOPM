@@ -32,7 +32,17 @@ export class TokensService {
   }
 
   async verifyAccessToken(token: string): Promise<AccessTokenPayload> {
-    return this.jwt.verifyAsync<AccessTokenPayload>(token, { secret: this.env.JWT_ACCESS_SECRET });
+    return this.jwt.verifyAsync<AccessTokenPayload>(token, { secret: this.env.JWT_ACCESS_SECRET, algorithms: ['HS256'] });
+  }
+
+  /**
+   * După ștergerea contului, un token de acces încă nevenit la termen nu mai trebuie să
+   * deschidă nicio rută (sau conexiune în timp real).
+   */
+  async assertUserExists(userId: string): Promise<string> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) throw new AppError(HttpStatus.UNAUTHORIZED, 'INVALID_SESSION', 'Contul nu mai există');
+    return user.id;
   }
 
   get refreshTtlMs(): number {

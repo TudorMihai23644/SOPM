@@ -26,7 +26,8 @@ export class RealtimeGateway implements OnGatewayConnection {
     try {
       const token = (client.handshake.auth as { token?: unknown } | undefined)?.token;
       if (typeof token !== 'string') throw new Error('fără token');
-      const { sub: userId } = await this.tokens.verifyAccessToken(token);
+      const { sub } = await this.tokens.verifyAccessToken(token);
+      const userId = await this.tokens.assertUserExists(sub);
       const membership = await this.prisma.teamMember.findUnique({ where: { userId } });
       await client.join(`user:${userId}`);
       if (membership) await client.join(`team:${membership.teamId}`);
